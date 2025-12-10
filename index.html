@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>可爱记账本</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>记账本</title>
     <!-- 引入SheetJS库用于导出XLSX -->
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,6 +13,7 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         :root {
@@ -23,32 +24,36 @@
             --text: #5A5A5A;
             --success: #A8E6CF;
             --danger: #FFAAA5;
-            --card-bg: rgba(255, 255, 255, 0.9);
-            --shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --radius: 16px;
+            --touch-size: 44px;
         }
         
         body {
             background: linear-gradient(135deg, #FFD6E7 0%, #C1E3FF 100%);
             color: var(--text);
-            line-height: 1.6;
-            padding: 20px;
+            line-height: 1.5;
+            padding: 12px;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 100%;
             margin: 0 auto;
         }
         
         header {
             text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-            border-radius: 20px;
+            margin-bottom: 20px;
+            padding: 20px 15px;
+            border-radius: var(--radius);
             background: var(--card-bg);
             box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
         
         header::before {
@@ -63,84 +68,59 @@
         
         h1 {
             color: var(--primary);
-            margin-bottom: 10px;
-            font-size: 2.5rem;
+            margin-bottom: 8px;
+            font-size: 1.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 10px;
         }
         
         h1 i {
             color: var(--accent);
-            font-size: 2.2rem;
+            font-size: 1.6rem;
         }
         
         .summary-card {
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 30px;
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
             box-shadow: var(--shadow);
             text-align: center;
             position: relative;
             overflow: hidden;
             border: 2px dashed var(--secondary);
-        }
-        
-        .summary-card::before {
-            content: "";
-            position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: var(--accent);
-            opacity: 0.2;
-        }
-        
-        .summary-card::after {
-            content: "";
-            position: absolute;
-            bottom: -30px;
-            left: -30px;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: var(--primary);
-            opacity: 0.2;
+            backdrop-filter: blur(10px);
         }
         
         .summary-card h2 {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            margin-bottom: 8px;
             opacity: 0.9;
             color: var(--primary);
         }
         
         .summary-card .amount {
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: bold;
             color: var(--primary);
-            text-shadow: 2px 2px 0px rgba(255, 141, 199, 0.2);
         }
         
         .content {
             display: flex;
-            gap: 25px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 20px;
         }
         
         .form-section, .records-section {
-            flex: 1;
-            min-width: 300px;
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 25px;
+            border-radius: var(--radius);
+            padding: 20px;
             box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
         }
         
         .form-section::before {
@@ -149,7 +129,7 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: var(--secondary);
         }
         
@@ -159,19 +139,19 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 5px;
+            height: 4px;
             background: var(--accent);
         }
         
         .section-title {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             color: var(--primary);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             padding-bottom: 10px;
             border-bottom: 2px dotted var(--secondary);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .section-title i {
@@ -179,32 +159,36 @@
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         
         label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-weight: 500;
             color: var(--text);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            font-size: 0.95rem;
         }
         
         label i {
             color: var(--primary);
-            width: 20px;
+            width: 18px;
         }
         
         input, select, textarea {
             width: 100%;
-            padding: 14px 18px;
+            padding: 14px 16px;
             border: 2px solid #E8E8E8;
             border-radius: 12px;
             font-size: 1rem;
             transition: all 0.3s;
             background: white;
+            -webkit-appearance: none;
+            appearance: none;
+            min-height: var(--touch-size);
         }
         
         input:focus, select:focus, textarea:focus {
@@ -214,7 +198,7 @@
         }
         
         .btn {
-            padding: 14px 20px;
+            padding: 14px 16px;
             border: none;
             border-radius: 12px;
             font-size: 1rem;
@@ -225,70 +209,75 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            min-height: var(--touch-size);
+            touch-action: manipulation;
         }
         
         .btn-primary {
             background: linear-gradient(135deg, var(--primary), #FF6BAE);
             color: white;
-            box-shadow: 0 4px 10px rgba(255, 107, 174, 0.3);
+            box-shadow: 0 3px 8px rgba(255, 107, 174, 0.3);
         }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(255, 107, 174, 0.4);
+        .btn-primary:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 4px rgba(255, 107, 174, 0.3);
         }
         
         .btn-success {
             background: linear-gradient(135deg, var(--success), #7ED9A3);
             color: white;
-            box-shadow: 0 4px 10px rgba(168, 230, 207, 0.3);
+            box-shadow: 0 3px 8px rgba(168, 230, 207, 0.3);
         }
         
-        .btn-success:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(168, 230, 207, 0.4);
+        .btn-success:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 4px rgba(168, 230, 207, 0.3);
         }
         
         .btn-danger {
             background: linear-gradient(135deg, var(--danger), #FF8A80);
             color: white;
-            box-shadow: 0 4px 10px rgba(255, 170, 165, 0.3);
+            box-shadow: 0 3px 8px rgba(255, 170, 165, 0.3);
         }
         
-        .btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(255, 170, 165, 0.4);
+        .btn-danger:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 4px rgba(255, 170, 165, 0.3);
         }
         
         .btn-secondary {
             background: linear-gradient(135deg, #E8E8E8, #D0D0D0);
             color: var(--text);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
         }
         
-        .btn-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        .btn-secondary:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         }
         
         .buttons {
             display: flex;
+            flex-direction: column;
             gap: 10px;
             margin-top: 20px;
         }
         
         .buttons .btn {
-            flex: 1;
+            width: 100%;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+            min-width: 600px; /* 确保在小屏幕上可以水平滚动 */
         }
         
         th, td {
-            padding: 15px;
+            padding: 12px 10px;
             text-align: left;
             border-bottom: 1px solid #F0F0F0;
         }
@@ -297,6 +286,7 @@
             background-color: rgba(163, 216, 255, 0.2);
             font-weight: 600;
             color: var(--primary);
+            font-size: 0.9rem;
         }
         
         tr:hover {
@@ -319,13 +309,14 @@
         }
         
         .actions .btn {
-            padding: 8px 12px;
+            padding: 8px 10px;
             font-size: 0.85rem;
             border-radius: 8px;
+            min-height: 36px;
         }
         
         .project-management {
-            margin-top: 30px;
+            margin-top: 20px;
             padding-top: 20px;
             border-top: 2px dotted var(--secondary);
         }
@@ -333,19 +324,21 @@
         .project-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            margin-top: 12px;
         }
         
         .project-item {
             background: white;
-            border-radius: 15px;
-            padding: 10px 15px;
+            border-radius: 12px;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+            gap: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
             border: 1px solid #F0F0F0;
+            flex: 1 0 calc(50% - 8px);
+            max-width: calc(50% - 8px);
         }
         
         .project-item.income {
@@ -368,32 +361,35 @@
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(5px);
+            padding: 15px;
         }
         
         .modal-content {
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 25px;
-            width: 90%;
+            border-radius: var(--radius);
+            padding: 20px;
+            width: 100%;
             max-width: 500px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
             position: relative;
             border: 2px solid var(--primary);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         
         .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         
         .modal-title {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             color: var(--primary);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .close {
@@ -401,36 +397,41 @@
             cursor: pointer;
             color: var(--text);
             transition: all 0.3s;
+            padding: 5px;
+            min-width: 36px;
+            min-height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .close:hover {
+        .close:active {
             color: var(--primary);
-            transform: scale(1.1);
+            transform: scale(0.95);
         }
         
         .search-section {
             background: var(--card-bg);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 16px;
             box-shadow: var(--shadow);
             border: 2px dashed var(--accent);
         }
         
         .search-row {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 12px;
         }
         
         .search-group {
-            flex: 1;
-            min-width: 200px;
+            width: 100%;
         }
         
         .search-results-info {
             margin-top: 10px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text);
             padding: 10px;
             background: rgba(255, 213, 158, 0.2);
@@ -444,24 +445,53 @@
             color: white;
             padding: 2px 8px;
             border-radius: 10px;
-            margin: 0 5px;
+            margin: 0 3px;
         }
         
-        @media (max-width: 768px) {
+        /* 移动端优化 */
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .container {
+                max-width: 1200px;
+            }
+            
             .content {
-                flex-direction: column;
+                flex-direction: row;
+            }
+            
+            .form-section, .records-section {
+                flex: 1;
+                min-width: 300px;
             }
             
             .buttons {
-                flex-direction: column;
+                flex-direction: row;
+            }
+            
+            .buttons .btn {
+                width: auto;
             }
             
             .search-row {
-                flex-direction: column;
+                flex-direction: row;
             }
             
-            h1 {
-                font-size: 2rem;
+            .search-group {
+                flex: 1;
+                min-width: 200px;
+            }
+            
+            .project-item {
+                flex: 1 0 calc(33.333% - 8px);
+                max-width: calc(33.333% - 8px);
+            }
+            
+            table {
+                min-width: auto;
+                font-size: 1rem;
             }
         }
         
@@ -476,8 +506,8 @@
         }
         
         .floating-btn {
-            width: 60px;
-            height: 60px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -485,8 +515,9 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             color: white;
+            touch-action: manipulation;
         }
         
         .floating-btn.primary {
@@ -497,25 +528,25 @@
             background: var(--success);
         }
         
-        .floating-btn:hover {
-            transform: scale(1.1);
+        .floating-btn:active {
+            transform: scale(0.95);
         }
         
         .empty-state {
             text-align: center;
-            padding: 40px 20px;
+            padding: 30px 15px;
             color: var(--text);
         }
         
         .empty-state i {
-            font-size: 4rem;
+            font-size: 3rem;
             color: var(--secondary);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         
         .empty-state p {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
         }
         
         .type-indicator {
@@ -523,7 +554,7 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            margin-right: 8px;
+            margin-right: 6px;
         }
         
         .type-income {
@@ -535,35 +566,38 @@
         }
         
         .emoji {
-            font-size: 1.2rem;
-            margin-right: 5px;
+            font-size: 1.1rem;
+            margin-right: 4px;
         }
         
         /* 分页样式 */
         .pagination {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
             padding: 15px;
             background: var(--card-bg);
-            border-radius: 15px;
+            border-radius: var(--radius);
             box-shadow: var(--shadow);
         }
         
         .pagination-info {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--text);
+            text-align: center;
         }
         
         .pagination-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         
         .pagination-btn {
-            padding: 8px 15px;
+            padding: 10px 14px;
             border: none;
             border-radius: 8px;
             background: var(--secondary);
@@ -571,12 +605,15 @@
             cursor: pointer;
             transition: all 0.3s;
             font-weight: 500;
+            min-height: 40px;
+            min-width: 40px;
+            touch-action: manipulation;
         }
         
-        .pagination-btn:hover:not(:disabled) {
+        .pagination-btn:active:not(:disabled) {
             background: var(--primary);
             color: white;
-            transform: translateY(-2px);
+            transform: translateY(2px);
         }
         
         .pagination-btn:disabled {
@@ -587,12 +624,14 @@
         .page-size-selector {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            font-size: 0.9rem;
         }
         
         .page-size-selector select {
             width: auto;
-            padding: 8px 15px;
+            padding: 8px 12px;
+            min-height: 40px;
         }
         
         /* 多选下拉框样式 */
@@ -609,7 +648,7 @@
             border: 2px solid #E8E8E8;
             border-radius: 12px;
             margin-top: 5px;
-            max-height: 200px;
+            max-height: 300px;
             overflow-y: auto;
             z-index: 10;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -626,25 +665,27 @@
         }
         
         .multiselect-search input {
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 8px;
+            min-height: 40px;
         }
         
         .multiselect-options {
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
         }
         
         .multiselect-option {
-            padding: 10px 15px;
+            padding: 12px 15px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 10px;
             transition: all 0.2s;
+            min-height: 44px;
         }
         
-        .multiselect-option:hover {
+        .multiselect-option:active {
             background: rgba(163, 216, 255, 0.2);
         }
         
@@ -662,22 +703,31 @@
         .selected-tag {
             background: var(--primary);
             color: white;
-            padding: 5px 10px;
+            padding: 6px 10px;
             border-radius: 15px;
             font-size: 0.85rem;
             display: flex;
             align-items: center;
             gap: 5px;
+            max-width: 100%;
         }
         
         .selected-tag .remove {
             cursor: pointer;
             font-weight: bold;
+            padding: 2px;
         }
         
         .multiselect-input {
             cursor: pointer;
             position: relative;
+            padding: 14px 16px;
+            border: 2px solid #E8E8E8;
+            border-radius: 12px;
+            background: white;
+            min-height: var(--touch-size);
+            display: flex;
+            align-items: center;
         }
         
         .multiselect-input::after {
@@ -699,33 +749,40 @@
         
         .import-actions {
             display: flex;
+            flex-direction: column;
             gap: 10px;
             margin-top: 15px;
         }
         
+        @media (min-width: 480px) {
+            .import-actions {
+                flex-direction: row;
+            }
+        }
+        
         .import-preview {
-            margin-top: 20px;
+            margin-top: 16px;
             max-height: 300px;
             overflow-y: auto;
             border: 1px solid #E8E8E8;
             border-radius: 12px;
-            padding: 15px;
+            padding: 12px;
             background: white;
         }
         
         .import-preview table {
             margin-top: 0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         
         .import-preview th, .import-preview td {
-            padding: 8px 12px;
+            padding: 8px 10px;
         }
         
         .file-input-wrapper {
             position: relative;
             overflow: hidden;
-            display: inline-block;
+            display: block;
             width: 100%;
         }
         
@@ -741,30 +798,229 @@
         
         .file-input-label {
             display: block;
-            padding: 14px 18px;
+            padding: 14px 16px;
             border: 2px dashed var(--secondary);
             border-radius: 12px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
             background: rgba(163, 216, 255, 0.1);
+            min-height: var(--touch-size);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
-        .file-input-label:hover {
+        .file-input-label:active {
             background: rgba(163, 216, 255, 0.2);
             border-color: var(--primary);
         }
         
         .file-input-label i {
             color: var(--primary);
-            margin-right: 8px;
+        }
+        
+        /* 表格容器，用于在手机上实现水平滚动 */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 -20px;
+            padding: 0 20px;
+            width: calc(100% + 40px);
+        }
+        
+        /* 移动端菜单切换 */
+        .mobile-tabs {
+            display: none;
+        }
+        
+        @media (max-width: 767px) {
+            .mobile-tabs {
+                display: flex;
+                background: var(--card-bg);
+                border-radius: var(--radius);
+                margin-bottom: 16px;
+                overflow: hidden;
+                box-shadow: var(--shadow);
+            }
+            
+            .mobile-tab {
+                flex: 1;
+                padding: 14px 10px;
+                text-align: center;
+                font-weight: 500;
+                color: var(--text);
+                cursor: pointer;
+                transition: all 0.3s;
+                border-bottom: 3px solid transparent;
+            }
+            
+            .mobile-tab.active {
+                color: var(--primary);
+                border-bottom-color: var(--primary);
+                background: rgba(255, 141, 199, 0.1);
+            }
+            
+            .mobile-tab:active {
+                background: rgba(255, 141, 199, 0.1);
+            }
+            
+            .form-section, .records-section {
+                display: none;
+            }
+            
+            .form-section.active, .records-section.active {
+                display: block;
+            }
+            
+            /* 移动端底部操作栏 */
+            .mobile-bottom-bar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: var(--card-bg);
+                padding: 10px 16px;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+                display: flex;
+                justify-content: space-between;
+                z-index: 90;
+                border-top-left-radius: var(--radius);
+                border-top-right-radius: var(--radius);
+            }
+            
+            .mobile-bottom-btn {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 5px;
+                border-radius: 8px;
+                color: var(--text);
+                font-size: 0.8rem;
+                transition: all 0.3s;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+            }
+            
+            .mobile-bottom-btn:active {
+                background: rgba(255, 141, 199, 0.1);
+                color: var(--primary);
+            }
+            
+            .mobile-bottom-btn i {
+                font-size: 1.2rem;
+                margin-bottom: 4px;
+            }
+            
+            /* 调整容器底部padding，避免内容被底部栏遮挡 */
+            .container {
+                padding-bottom: 80px;
+            }
+            
+            /* 隐藏桌面版浮动按钮 */
+            .floating-elements {
+                display: none;
+            }
+        }
+        
+        /* 输入框占位符样式 */
+        ::placeholder {
+            color: #aaa;
+            opacity: 1;
+        }
+        
+        /* 自定义选择框箭头 */
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A5A5A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
+            padding-right: 40px;
+        }
+        
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 141, 199, 0.5);
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 141, 199, 0.7);
+        }
+        
+        /* 日期选择器样式 */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        /* 快速操作菜单 */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-action-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 10px;
+            background: white;
+            border: 1px solid #E8E8E8;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quick-action-btn:active {
+            background: rgba(255, 141, 199, 0.1);
+            border-color: var(--primary);
+            transform: translateY(2px);
+        }
+        
+        .quick-action-btn i {
+            font-size: 1.4rem;
+            color: var(--primary);
+        }
+        
+        .quick-action-btn span {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        /* 移动端日期选择器优化 */
+        @media (max-width: 767px) {
+            input[type="date"] {
+                font-size: 16px; /* 防止iOS缩放 */
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-piggy-bank"></i> 可爱记账本 <i class="fas fa-heart"></i></h1>
+            <h1><i class="fas fa-piggy-bank"></i> 记账本</h1>
             <p>轻松记录每一笔收支，让财务管理变得简单又有趣</p>
         </header>
         
@@ -773,8 +1029,15 @@
             <div class="amount" id="totalAmount">¥0.00</div>
         </div>
         
+        <!-- 移动端标签切换 -->
+        <div class="mobile-tabs">
+            <div class="mobile-tab active" data-tab="form"><i class="fas fa-plus-circle"></i> 记账</div>
+            <div class="mobile-tab" data-tab="records"><i class="fas fa-list-alt"></i> 记录</div>
+            <div class="mobile-tab" data-tab="projects"><i class="fas fa-tags"></i> 项目</div>
+        </div>
+        
         <div class="content">
-            <div class="form-section">
+            <div class="form-section active" id="formTab">
                 <h2 class="section-title"><i class="fas fa-plus-circle"></i> 添加新记录</h2>
                 <form id="accountForm">
                     <div class="form-group">
@@ -785,8 +1048,8 @@
                     <div class="form-group">
                         <label for="type"><i class="fas fa-exchange-alt"></i> 类型</label>
                         <select id="type" required>
-                            <option value="income">收入 💰</option>
                             <option value="expense">支出 💸</option>
+                            <option value="income">收入 💰</option>
                         </select>
                     </div>
                     
@@ -812,6 +1075,22 @@
                         <button type="button" class="btn btn-secondary" id="resetBtn"><i class="fas fa-redo"></i> 重置</button>
                     </div>
                 </form>
+                
+                <!-- 快速操作 -->
+                <div class="quick-actions">
+                    <div class="quick-action-btn" id="quickIncomeBtn">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>快速收入</span>
+                    </div>
+                    <div class="quick-action-btn" id="quickExpenseBtn">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>快速支出</span>
+                    </div>
+                    <div class="quick-action-btn" id="quickFoodBtn">
+                        <i class="fas fa-utensils"></i>
+                        <span>餐饮消费</span>
+                    </div>
+                </div>
                 
                 <div class="import-section">
                     <h3 class="section-title"><i class="fas fa-file-import"></i> 导入记录</h3>
@@ -843,18 +1122,9 @@
                         </table>
                     </div>
                 </div>
-                
-                <div class="project-management">
-                    <h3 class="section-title"><i class="fas fa-cog"></i> 项目管理</h3>
-                    <button class="btn btn-success" id="addProjectBtn"><i class="fas fa-plus"></i> 添加项目</button>
-                    
-                    <div class="project-list" id="projectList">
-                        <!-- 动态填充 -->
-                    </div>
-                </div>
             </div>
             
-            <div class="records-section">
+            <div class="records-section" id="recordsTab">
                 <h2 class="section-title"><i class="fas fa-list-alt"></i> 账本记录</h2>
                 
                 <div class="search-section">
@@ -902,21 +1172,23 @@
                     <button class="btn btn-danger" id="clearBtn"><i class="fas fa-trash"></i> 清空记录</button>
                 </div>
                 
-                <table id="recordsTable">
-                    <thead>
-                        <tr>
-                            <th>日期</th>
-                            <th>类型</th>
-                            <th>项目</th>
-                            <th>金额</th>
-                            <th>备注</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- 动态填充 -->
-                    </tbody>
-                </table>
+                <div class="table-container">
+                    <table id="recordsTable">
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>类型</th>
+                                <th>项目</th>
+                                <th>金额</th>
+                                <th>备注</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 动态填充 -->
+                        </tbody>
+                    </table>
+                </div>
                 
                 <!-- 分页控件 -->
                 <div class="pagination">
@@ -941,6 +1213,30 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- 项目管理部分（移动端专属） -->
+            <div class="form-section" id="projectsTab">
+                <h2 class="section-title"><i class="fas fa-tags"></i> 项目管理</h2>
+                
+                <div class="project-management">
+                    <button class="btn btn-success" id="addProjectBtn"><i class="fas fa-plus"></i> 添加项目</button>
+                    
+                    <div class="project-list" id="projectList">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <div class="quick-action-btn" id="addIncomeProjectBtn">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>添加收入项目</span>
+                    </div>
+                    <div class="quick-action-btn" id="addExpenseProjectBtn">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span>添加支出项目</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -960,8 +1256,8 @@
                 <div class="form-group">
                     <label for="projectType"><i class="fas fa-exchange-alt"></i> 项目类型</label>
                     <select id="projectType" required>
-                        <option value="income">收入项目 💰</option>
                         <option value="expense">支出项目 💸</option>
+                        <option value="income">收入项目 💰</option>
                     </select>
                 </div>
                 
@@ -973,7 +1269,7 @@
         </div>
     </div>
 
-    <!-- 浮动按钮 -->
+    <!-- 浮动按钮（桌面端） -->
     <div class="floating-elements">
         <div class="floating-btn primary" id="quickAddBtn" title="快速添加记录">
             <i class="fas fa-plus"></i>
@@ -982,19 +1278,58 @@
             <i class="fas fa-file-export"></i>
         </div>
     </div>
+    
+    <!-- 移动端底部操作栏 -->
+    <div class="mobile-bottom-bar">
+        <button class="mobile-bottom-btn" data-action="add">
+            <i class="fas fa-plus-circle"></i>
+            <span>记账</span>
+        </button>
+        <button class="mobile-bottom-btn" data-action="records">
+            <i class="fas fa-list-alt"></i>
+            <span>记录</span>
+        </button>
+        <button class="mobile-bottom-btn" data-action="stats">
+            <i class="fas fa-chart-pie"></i>
+            <span>统计</span>
+        </button>
+        <button class="mobile-bottom-btn" data-action="export">
+            <i class="fas fa-file-export"></i>
+            <span>导出</span>
+        </button>
+        <button class="mobile-bottom-btn" data-action="projects">
+            <i class="fas fa-tags"></i>
+            <span>项目</span>
+        </button>
+    </div>
 
     <script>
         // 初始化默认项目和账本数据
         let projects = [
             { id: 1, name: "工资", type: "income", emoji: "💰" },
-            { id: 2, name: "其他", type: "income", emoji: "💼" },
-            { id: 3, name: "饮食", type: "expense", emoji: "🍔" },
-            { id: 4, name: "衣服", type: "expense", emoji: "👕" },
+            { id: 2, name: "出差", type: "income", emoji: "💼" },
+            { id: 3, name: "本金", type: "income", emoji: "💰" },
+            { id: 4, name: "吃饭", type: "expense", emoji: "🍔" },
             { id: 5, name: "日用品", type: "expense", emoji: "🧴" },
             { id: 6, name: "化妆品", type: "expense", emoji: "💄" },
-            { id: 7, name: "宠物", type: "expense", emoji: "🐶" },
-            { id: 8, name: "旅游", type: "expense", emoji: "✈️" },
-            { id: 9, name: "电动车", type: "expense", emoji: "🛵" }
+            { id: 7, name: "衣服", type: "expense", emoji: "👕" },
+            { id: 8, name: "宠物", type: "expense", emoji: "🐶" },
+{ id: 9, name: "话费", type: "expense", emoji: "📱" }, // 手机
+{ id: 10, name: "MaMa", type: "expense", emoji: "👩" }, // 女性头像 (妈妈)
+{ id: 11, name: "通勤", type: "expense", emoji: "🚇" }, // 地铁 (或 🚌 公交)
+{ id: 12, name: "房租", type: "expense", emoji: "🏠" }, // 房子
+{ id: 13, name: "水费", type: "expense", emoji: "💧" }, // 水滴
+{ id: 14, name: "电费", type: "expense", emoji: "⚡" }, // 闪电
+{ id: 15, name: "燃气费", type: "expense", emoji: "🔥" }, // 火焰
+{ id: 16, name: "电动车", type: "expense", emoji: "🛵" }, // 电动车
+{ id: 17, name: "旅游", type: "expense", emoji: "✈️" }, // 飞机
+{ id: 18, name: "电子蝴蝶", type: "expense", emoji: "🎮" }, // 游戏手柄 (电子产品)
+{ id: 19, name: "娱乐", type: "expense", emoji: "🎬" }, // 电影场记板
+{ id: 20, name: "医药", type: "expense", emoji: "💊" }, // 药丸
+{ id: 21, name: "礼物", type: "expense", emoji: "🎁" }, // 礼物盒
+{ id: 22, name: "饰品", type: "expense", emoji: "💎" }, // 宝石
+{ id: 23, name: "设备", type: "expense", emoji: "💻" } // 笔记本电脑
+
         ];
 
         let records = [];
@@ -1012,6 +1347,9 @@
         
         // 导入相关变量
         let importData = [];
+        
+        // 移动端当前标签
+        let currentMobileTab = 'form';
 
         // DOM 元素
         const accountForm = document.getElementById('accountForm');
@@ -1057,6 +1395,20 @@
         const importBtn = document.getElementById('importBtn');
         const importPreview = document.getElementById('importPreview');
         const importPreviewBody = document.getElementById('importPreviewBody');
+        
+        // 移动端相关DOM元素
+        const mobileTabs = document.querySelectorAll('.mobile-tab');
+        const mobileBottomBtns = document.querySelectorAll('.mobile-bottom-btn');
+        const formTab = document.getElementById('formTab');
+        const recordsTab = document.getElementById('recordsTab');
+        const projectsTab = document.getElementById('projectsTab');
+        
+        // 快速操作按钮
+        const quickIncomeBtn = document.getElementById('quickIncomeBtn');
+        const quickExpenseBtn = document.getElementById('quickExpenseBtn');
+        const quickFoodBtn = document.getElementById('quickFoodBtn');
+        const addIncomeProjectBtn = document.getElementById('addIncomeProjectBtn');
+        const addExpenseProjectBtn = document.getElementById('addExpenseProjectBtn');
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1064,11 +1416,23 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('date').value = today;
             
+            // 设置查询日期默认范围（最近30天）
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+            endDateInput.value = today;
+            
             // 从本地存储加载数据
             loadData();
             
+            // 设置默认类型为支出
+            document.getElementById('type').value = 'expense';
+            
             // 更新项目选择列表
             updateProjectSelect();
+            
+            // 设置默认项目为饮食（id为3）
+            document.getElementById('project').value = 3;
             
             // 更新项目显示列表
             updateProjectList();
@@ -1115,6 +1479,29 @@
             downloadTemplateBtn.addEventListener('click', downloadTemplate);
             importBtn.addEventListener('click', importRecords);
             
+            // 移动端标签切换事件
+            mobileTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchMobileTab(tabId);
+                });
+            });
+            
+            // 移动端底部按钮事件
+            mobileBottomBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.getAttribute('data-action');
+                    handleMobileAction(action);
+                });
+            });
+            
+            // 快速操作按钮事件
+            quickIncomeBtn.addEventListener('click', () => quickAddRecord('income', '工资', 0));
+            quickExpenseBtn.addEventListener('click', () => quickAddRecord('expense', '日用品', 0));
+            quickFoodBtn.addEventListener('click', () => quickAddRecord('expense', '饮食', 0));
+            addIncomeProjectBtn.addEventListener('click', () => quickAddProject('income'));
+            addExpenseProjectBtn.addEventListener('click', () => quickAddProject('expense'));
+            
             // 点击模态框外部关闭
             window.addEventListener('click', function(event) {
                 if (event.target === projectModal) {
@@ -1124,13 +1511,256 @@
                     multiselectDropdown.classList.remove('active');
                 }
             });
+            
+            // 监听类型变化，更新项目列表
+            document.getElementById('type').addEventListener('change', updateProjectSelect);
+            
+            // 移动端初始化
+            initMobileView();
         });
+
+        // 移动端视图初始化
+        function initMobileView() {
+            // 检查是否是移动设备
+            const isMobile = window.innerWidth <= 767;
+            
+            if (isMobile) {
+                // 设置初始标签
+                switchMobileTab('form');
+                
+                // 隐藏桌面版浮动按钮
+                document.querySelector('.floating-elements').style.display = 'none';
+                
+                // 调整表格容器宽度
+                const tableContainer = document.querySelector('.table-container');
+                if (tableContainer) {
+                    const containerWidth = document.querySelector('.container').offsetWidth;
+                    tableContainer.style.width = `${containerWidth}px`;
+                }
+            }
+        }
+
+        // 切换移动端标签
+        function switchMobileTab(tabId) {
+            // 更新当前标签
+            currentMobileTab = tabId;
+            
+            // 更新标签激活状态
+            mobileTabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabId) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // 更新底部按钮激活状态
+            mobileBottomBtns.forEach(btn => {
+                if (btn.getAttribute('data-action') === tabId) {
+                    btn.style.color = 'var(--primary)';
+                } else {
+                    btn.style.color = 'var(--text)';
+                }
+            });
+            
+            // 显示对应的内容区域
+            const tabs = [formTab, recordsTab, projectsTab];
+            tabs.forEach(tab => {
+                if (tab.id === `${tabId}Tab`) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 处理移动端底部按钮操作
+        function handleMobileAction(action) {
+            switch (action) {
+                case 'add':
+                    switchMobileTab('form');
+                    break;
+                case 'records':
+                    switchMobileTab('records');
+                    break;
+                case 'stats':
+                    showStatsModal();
+                    break;
+                case 'export':
+                    exportData();
+                    break;
+                case 'projects':
+                    switchMobileTab('projects');
+                    break;
+            }
+        }
+
+        // 显示统计模态框
+        function showStatsModal() {
+            // 计算收入总额
+            const totalIncome = records
+                .filter(record => record.type === 'income')
+                .reduce((sum, record) => sum + Math.abs(record.amount), 0);
+            
+            // 计算支出总额
+            const totalExpense = records
+                .filter(record => record.type === 'expense')
+                .reduce((sum, record) => sum + Math.abs(record.amount), 0);
+            
+            // 计算余额
+            const balance = totalIncome - totalExpense;
+            
+            // 计算各项目支出
+            const projectStats = {};
+            records.forEach(record => {
+                if (record.type === 'expense') {
+                    if (!projectStats[record.projectName]) {
+                        projectStats[record.projectName] = 0;
+                    }
+                    projectStats[record.projectName] += Math.abs(record.amount);
+                }
+            });
+            
+            // 创建统计内容
+            let statsHTML = `
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-pie"></i> 收支统计
+                    </h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <div style="color: #2E8B57;">
+                            <div style="font-size: 0.9rem;">总收入</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">¥${totalIncome.toFixed(2)}</div>
+                        </div>
+                        <div style="color: #FF6B6B;">
+                            <div style="font-size: 0.9rem;">总支出</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">¥${totalExpense.toFixed(2)}</div>
+                        </div>
+                        <div style="color: var(--primary);">
+                            <div style="font-size: 0.9rem;">结余</div>
+                            <div style="font-size: 1.5rem; font-weight: bold;">¥${balance.toFixed(2)}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 添加支出项目统计
+            if (Object.keys(projectStats).length > 0) {
+                statsHTML += `
+                    <div>
+                        <h4 style="color: var(--primary); margin-bottom: 10px;">支出项目统计</h4>
+                        <div style="max-height: 200px; overflow-y: auto;">
+                `;
+                
+                // 按金额排序
+                const sortedProjects = Object.entries(projectStats)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedProjects.forEach(([projectName, amount]) => {
+                    const percentage = totalExpense > 0 ? (amount / totalExpense * 100).toFixed(1) : 0;
+                    statsHTML += `
+                        <div style="margin-bottom: 10px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span>${projectName}</span>
+                                <span>¥${amount.toFixed(2)} (${percentage}%)</span>
+                            </div>
+                            <div style="height: 8px; background: #E8E8E8; border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${percentage}%; background: var(--primary);"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                statsHTML += `</div></div>`;
+            }
+            
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title"><i class="fas fa-chart-pie"></i> 统计信息</h3>
+                        <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
+                    </div>
+                    <div>${statsHTML}</div>
+                    <div class="buttons" style="margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="this.parentElement.parentElement.parentElement.remove()">
+                            <i class="fas fa-check"></i> 关闭
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(modal);
+            
+            // 点击模态框外部关闭
+            modal.addEventListener('click', function(event) {
+                if (event.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // 快速添加记录
+        function quickAddRecord(type, defaultProject, defaultAmount) {
+            // 设置表单值
+            document.getElementById('type').value = type;
+            updateProjectSelect();
+            
+            // 查找对应的项目ID
+            const project = projects.find(p => p.name === defaultProject && p.type === type);
+            if (project) {
+                document.getElementById('project').value = project.id;
+            }
+            
+            // 设置金额为0，让用户输入
+            document.getElementById('amount').value = '';
+            
+            // 设置焦点到金额输入框
+            document.getElementById('amount').focus();
+            
+            // 切换到表单标签
+            if (window.innerWidth <= 767) {
+                switchMobileTab('form');
+            }
+            
+            // 滚动到表单
+            scrollToForm();
+            
+            showNotification(`已切换到${type === 'income' ? '收入' : '支出'}模式，请输入金额`, 'success');
+        }
+
+        // 快速添加项目
+        function quickAddProject(type) {
+            openProjectModal();
+            document.getElementById('projectType').value = type;
+            
+            // 根据类型生成默认项目名
+            if (type === 'income') {
+                document.getElementById('projectName').value = '其他收入';
+            } else {
+                document.getElementById('projectName').value = '其他支出';
+            }
+            
+            // 设置焦点到项目名输入框
+            document.getElementById('projectName').focus();
+        }
 
         // 滚动到表单区域
         function scrollToForm() {
-            document.querySelector('.form-section').scrollIntoView({ 
-                behavior: 'smooth' 
-            });
+            if (window.innerWidth <= 767) {
+                switchMobileTab('form');
+            } else {
+                document.querySelector('.form-section').scrollIntoView({ 
+                    behavior: 'smooth' 
+                });
+            }
         }
 
         // 加载本地存储的数据
@@ -1315,6 +1945,13 @@
             let amount = parseFloat(document.getElementById('amount').value);
             const note = document.getElementById('note').value;
             
+            // 验证金额
+            if (isNaN(amount) || amount <= 0) {
+                showNotification('请输入有效的金额', 'danger');
+                document.getElementById('amount').focus();
+                return;
+            }
+            
             // 如果是支出，金额转为负数
             if (type === 'expense') {
                 amount = -Math.abs(amount);
@@ -1337,7 +1974,7 @@
                 note
             };
             
-            records.push(newRecord);
+            records.unshift(newRecord); // 添加到开头，这样最新的记录显示在最前面
             saveData();
             updateRecordsTable();
             updateTotalAmount();
@@ -1345,15 +1982,26 @@
             
             // 显示成功提示
             showNotification(`成功添加${type === 'income' ? '收入' : '支出'}记录！`, 'success');
+            
+            // 在移动端切换到记录标签
+            if (window.innerWidth <= 767) {
+                setTimeout(() => switchMobileTab('records'), 500);
+            }
         }
 
         // 显示通知
         function showNotification(message, type) {
+            // 移除现有的通知
+            const existingNotification = document.querySelector('.notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
             // 创建通知元素
             const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
+            notification.className = 'notification';
             notification.innerHTML = `
-                <div style="position: fixed; top: 20px; right: 20px; background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'}; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 10px;">
+                <div style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'}; color: white; padding: 12px 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 10px; max-width: 90%;">
                     <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
                     ${message}
                 </div>
@@ -1408,7 +2056,11 @@
                 
                 // 日期
                 const dateCell = row.insertCell(0);
-                dateCell.textContent = record.date;
+                const dateObj = new Date(record.date);
+                const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const day = dateObj.getDate().toString().padStart(2, '0');
+                dateCell.textContent = `${month}-${day}`;
+                dateCell.title = record.date;
                 
                 // 类型
                 const typeCell = row.insertCell(1);
@@ -1429,6 +2081,7 @@
                 // 备注
                 const noteCell = row.insertCell(4);
                 noteCell.textContent = record.note || '-';
+                noteCell.title = record.note || '';
                 
                 // 操作
                 const actionCell = row.insertCell(5);
@@ -1513,15 +2166,27 @@
             accountForm.reset();
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('date').value = today;
+            // 设置默认类型为支出
+            document.getElementById('type').value = 'expense';
             updateProjectSelect();
+            // 设置默认项目为饮食（id为3）
+            document.getElementById('project').value = 3;
+            
+            // 设置焦点到日期输入框
+            document.getElementById('date').focus();
         }
 
         // 打开项目模态框
         function openProjectModal() {
             editingProjectId = null;
             document.getElementById('projectName').value = '';
-            document.getElementById('projectType').value = 'income';
+            document.getElementById('projectType').value = 'expense'; // 默认项目类型为支出
             projectModal.style.display = 'flex';
+            
+            // 设置焦点到项目名称输入框
+            setTimeout(() => {
+                document.getElementById('projectName').focus();
+            }, 100);
         }
 
         // 关闭项目模态框
@@ -1537,6 +2202,11 @@
                 document.getElementById('projectName').value = project.name;
                 document.getElementById('projectType').value = project.type;
                 projectModal.style.display = 'flex';
+                
+                // 设置焦点到项目名称输入框
+                setTimeout(() => {
+                    document.getElementById('projectName').focus();
+                }, 100);
             }
         }
 
@@ -1548,7 +2218,7 @@
             const type = document.getElementById('projectType').value;
             
             if (!name) {
-                alert('请输入项目名称');
+                showNotification('请输入项目名称', 'danger');
                 return;
             }
             
@@ -1559,7 +2229,7 @@
             );
             
             if (existingProject) {
-                alert('项目名称已存在');
+                showNotification('项目名称已存在', 'danger');
                 return;
             }
             
@@ -1596,7 +2266,7 @@
             const recordsUsingProject = records.filter(record => record.projectId === projectId);
             
             if (recordsUsingProject.length > 0) {
-                alert('无法删除该项目，因为有记录正在使用它。请先删除相关记录。');
+                showNotification('无法删除该项目，因为有记录正在使用它。请先删除相关记录。', 'danger');
                 return;
             }
             
@@ -1641,7 +2311,7 @@
         // 导出数据为XLSX格式
         function exportData() {
             if (records.length === 0) {
-                alert('没有数据可导出');
+                showNotification('没有数据可导出', 'danger');
                 return;
             }
             
@@ -1686,7 +2356,7 @@
         // 清空记录
         function clearRecords() {
             if (records.length === 0) {
-                alert('没有记录可清空');
+                showNotification('没有记录可清空', 'danger');
                 return;
             }
             
@@ -1763,7 +2433,7 @@
                     
                     // 验证数据格式
                     if (jsonData.length < 2 || jsonData[0].join(',') !== '日期,类型,项目,金额,备注') {
-                        alert('文件格式不正确，请使用下载的模板文件！');
+                        showNotification('文件格式不正确，请使用下载的模板文件！', 'danger');
                         return;
                     }
                     
@@ -1783,14 +2453,14 @@
                         
                         // 验证数据
                         if (!date || !type || !projectName || isNaN(amount)) {
-                            alert(`第 ${i+1} 行数据格式不正确，跳过该行`);
+                            showNotification(`第 ${i+1} 行数据格式不正确，跳过该行`, 'danger');
                             hasError = true;
                             continue;
                         }
                         
                         // 验证类型
                         if (type !== '收入' && type !== '支出') {
-                            alert(`第 ${i+1} 行类型不正确，应为"收入"或"支出"，跳过该行`);
+                            showNotification(`第 ${i+1} 行类型不正确，应为"收入"或"支出"，跳过该行`, 'danger');
                             hasError = true;
                             continue;
                         }
@@ -1798,7 +2468,7 @@
                         // 查找项目
                         const project = projects.find(p => p.name === projectName);
                         if (!project) {
-                            alert(`第 ${i+1} 行项目"${projectName}"不存在，跳过该行`);
+                            showNotification(`第 ${i+1} 行项目"${projectName}"不存在，跳过该行`, 'danger');
                             hasError = true;
                             continue;
                         }
@@ -1806,7 +2476,7 @@
                         // 验证项目类型是否匹配
                         if ((type === '收入' && project.type !== 'income') || 
                             (type === '支出' && project.type !== 'expense')) {
-                            alert(`第 ${i+1} 行项目"${projectName}"类型不匹配，跳过该行`);
+                            showNotification(`第 ${i+1} 行项目"${projectName}"类型不匹配，跳过该行`, 'danger');
                             hasError = true;
                             continue;
                         }
@@ -1835,13 +2505,13 @@
                             showNotification(`成功解析 ${importData.length} 条记录，点击"导入数据"按钮完成导入`, 'success');
                         }
                     } else {
-                        alert('没有找到有效的记录数据');
+                        showNotification('没有找到有效的记录数据', 'danger');
                         importBtn.disabled = true;
                         importPreview.style.display = 'none';
                     }
                 } catch (error) {
                     console.error('导入错误:', error);
-                    alert('文件读取失败，请检查文件格式');
+                    showNotification('文件读取失败，请检查文件格式', 'danger');
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -1894,7 +2564,7 @@
         
         function importRecords() {
             if (importData.length === 0) {
-                alert('没有可导入的数据');
+                showNotification('没有可导入的数据', 'danger');
                 return;
             }
             
@@ -1912,7 +2582,7 @@
             importPreview.style.display = 'none';
             importData = [];
             
-            showNotification(`成功导入 ${importData.length} 条记录！`, 'success');
+            showNotification(`成功导入记录！`, 'success');
         }
         
         function downloadTemplate() {
@@ -1947,8 +2617,8 @@
             showNotification('模板下载成功！', 'success');
         }
 
-        // 监听类型变化，更新项目列表
-        document.getElementById('type').addEventListener('change', updateProjectSelect);
+        // 窗口大小变化时重新初始化移动端视图
+        window.addEventListener('resize', initMobileView);
     </script>
 </body>
 </html>
