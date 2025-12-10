@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>可爱记账本</title>
+    <!-- 引入SheetJS库用于导出XLSX -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        :root {
+            --primary: #FF8DC7;
+            --secondary: #A3D8FF;
+            --accent: #FFD59E;
+            --light: #FFF5E4;
+            --text: #5A5A5A;
+            --success: #A8E6CF;
+            --danger: #FFAAA5;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #FFD6E7 0%, #C1E3FF 100%);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 20px;
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        h1 i {
+            color: var(--accent);
+            font-size: 2.2rem;
+        }
+        
+        .summary-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed var(--secondary);
+        }
+        
+        .summary-card::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0.2;
+        }
+        
+        .summary-card::after {
+            content: "";
+            position: absolute;
+            bottom: -30px;
+            left: -30px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--primary);
+            opacity: 0.2;
+        }
+        
+        .summary-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+            color: var(--primary);
+        }
+        
+        .summary-card .amount {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-shadow: 2px 2px 0px rgba(255, 141, 199, 0.2);
+        }
+        
+        .content {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+        
+        .form-section, .records-section {
+            flex: 1;
+            min-width: 300px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .form-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--secondary);
+        }
+        
+        .records-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--accent);
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px dotted var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        label i {
+            color: var(--primary);
+            width: 20px;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #E8E8E8;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: white;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 141, 199, 0.2);
+        }
+        
+        .btn {
+            padding: 14px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #FF6BAE);
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 107, 174, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 107, 174, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #7ED9A3);
+            color: white;
+            box-shadow: 0 4px 10px rgba(168, 230, 207, 0.3);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(168, 230, 207, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #FF8A80);
+            color: white;
+            box-shadow: 0 4px 10px rgba(255, 170, 165, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 170, 165, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #E8E8E8, #D0D0D0);
+            color: var(--text);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .buttons .btn {
+            flex: 1;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #F0F0F0;
+        }
+        
+        th {
+            background-color: rgba(163, 216, 255, 0.2);
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        tr:hover {
+            background-color: rgba(255, 213, 158, 0.1);
+        }
+        
+        .income {
+            color: #2E8B57;
+            font-weight: 500;
+        }
+        
+        .expense {
+            color: #FF6B6B;
+            font-weight: 500;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .actions .btn {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+        }
+        
+        .project-management {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px dotted var(--secondary);
+        }
+        
+        .project-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .project-item {
+            background: white;
+            border-radius: 15px;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+            border: 1px solid #F0F0F0;
+        }
+        
+        .project-item.income {
+            border-left: 4px solid var(--success);
+        }
+        
+        .project-item.expense {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            position: relative;
+            border: 2px solid var(--primary);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .close {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+            transition: all 0.3s;
+        }
+        
+        .close:hover {
+            color: var(--primary);
+            transform: scale(1.1);
+        }
+        
+        .search-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 2px dashed var(--accent);
+        }
+        
+        .search-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .search-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .search-results-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text);
+            padding: 10px;
+            background: rgba(255, 213, 158, 0.2);
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .record-count {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin: 0 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                flex-direction: column;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            .search-row {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        .floating-elements {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .floating-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .floating-btn.primary {
+            background: var(--primary);
+        }
+        
+        .floating-btn.success {
+            background: var(--success);
+        }
+        
+        .floating-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--secondary);
+            margin-bottom: 20px;
+        }
+        
+        .empty-state p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        
+        .type-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .type-income {
+            background: var(--success);
+        }
+        
+        .type-expense {
+            background: var(--danger);
+        }
+        
+        .emoji {
+            font-size: 1.2rem;
+            margin-right: 5px;
+        }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+        }
+        
+        .pagination-info {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .pagination-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-size-selector select {
+            width: auto;
+            padding: 8px 15px;
+        }
+        
+        /* 多选下拉框样式 */
+        .multiselect-container {
+            position: relative;
+        }
+        
+        .multiselect-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 2px solid #E8E8E8;
+            border-radius: 12px;
+            margin-top: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .multiselect-dropdown.active {
+            display: block;
+        }
+        
+        .multiselect-search {
+            padding: 10px;
+            border-bottom: 1px solid #E8E8E8;
+        }
+        
+        .multiselect-search input {
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        
+        .multiselect-options {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .multiselect-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        .multiselect-option:hover {
+            background: rgba(163, 216, 255, 0.2);
+        }
+        
+        .multiselect-option.selected {
+            background: rgba(255, 141, 199, 0.2);
+        }
+        
+        .multiselect-selected {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        
+        .selected-tag {
+            background: var(--primary);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .selected-tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .multiselect-input {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .multiselect-input::after {
+            content: "▼";
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text);
+            pointer-events: none;
+        }
+        
+        /* 导入功能样式 */
+        .import-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dotted var(--secondary);
+        }
+        
+        .import-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .import-preview {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #E8E8E8;
+            border-radius: 12px;
+            padding: 15px;
+            background: white;
+        }
+        
+        .import-preview table {
+            margin-top: 0;
+            font-size: 0.9rem;
+        }
+        
+        .import-preview th, .import-preview td {
+            padding: 8px 12px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-input-label {
+            display: block;
+            padding: 14px 18px;
+            border: 2px dashed var(--secondary);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(163, 216, 255, 0.1);
+        }
+        
+        .file-input-label:hover {
+            background: rgba(163, 216, 255, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .file-input-label i {
+            color: var(--primary);
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-piggy-bank"></i> 可爱记账本 <i class="fas fa-heart"></i></h1>
+            <p>轻松记录每一笔收支，让财务管理变得简单又有趣</p>
+        </header>
+        
+        <div class="summary-card">
+            <h2><i class="fas fa-wallet"></i> 当前余额</h2>
+            <div class="amount" id="totalAmount">¥0.00</div>
+        </div>
+        
+        <div class="content">
+            <div class="form-section">
+                <h2 class="section-title"><i class="fas fa-plus-circle"></i> 添加新记录</h2>
+                <form id="accountForm">
+                    <div class="form-group">
+                        <label for="date"><i class="fas fa-calendar-alt"></i> 日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="type"><i class="fas fa-exchange-alt"></i> 类型</label>
+                        <select id="type" required>
+                            <option value="income">收入 💰</option>
+                            <option value="expense">支出 💸</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="project"><i class="fas fa-tags"></i> 项目</label>
+                        <select id="project" required>
+                            <!-- 动态填充 -->
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount"><i class="fas fa-coins"></i> 金额</label>
+                        <input type="number" id="amount" step="0.01" min="0" placeholder="请输入金额" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="note"><i class="fas fa-sticky-note"></i> 备注</label>
+                        <textarea id="note" rows="3" placeholder="添加备注（可选）"></textarea>
+                    </div>
+                    
+                    <div class="buttons">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 添加记录</button>
+                        <button type="button" class="btn btn-secondary" id="resetBtn"><i class="fas fa-redo"></i> 重置</button>
+                    </div>
+                </form>
+                
+                <div class="import-section">
+                    <h3 class="section-title"><i class="fas fa-file-import"></i> 导入记录</h3>
+                    <div class="file-input-wrapper">
+                        <input type="file" id="importFile" accept=".xlsx, .xls, .csv">
+                        <label for="importFile" class="file-input-label">
+                            <i class="fas fa-upload"></i> 选择Excel/CSV文件导入
+                        </label>
+                    </div>
+                    <div class="import-actions">
+                        <button class="btn btn-success" id="downloadTemplateBtn"><i class="fas fa-download"></i> 下载模板</button>
+                        <button class="btn btn-primary" id="importBtn" disabled><i class="fas fa-file-import"></i> 导入数据</button>
+                    </div>
+                    <div class="import-preview" id="importPreview" style="display: none;">
+                        <h4>导入预览 (前5条记录)</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>类型</th>
+                                    <th>项目</th>
+                                    <th>金额</th>
+                                    <th>备注</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewBody">
+                                <!-- 动态填充 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="project-management">
+                    <h3 class="section-title"><i class="fas fa-cog"></i> 项目管理</h3>
+                    <button class="btn btn-success" id="addProjectBtn"><i class="fas fa-plus"></i> 添加项目</button>
+                    
+                    <div class="project-list" id="projectList">
+                        <!-- 动态填充 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="records-section">
+                <h2 class="section-title"><i class="fas fa-list-alt"></i> 账本记录</h2>
+                
+                <div class="search-section">
+                    <h3><i class="fas fa-search"></i> 查询记录</h3>
+                    <div class="search-row">
+                        <div class="search-group">
+                            <label for="startDate"><i class="fas fa-calendar"></i> 开始日期</label>
+                            <input type="date" id="startDate">
+                        </div>
+                        <div class="search-group">
+                            <label for="endDate"><i class="fas fa-calendar"></i> 结束日期</label>
+                            <input type="date" id="endDate">
+                        </div>
+                        <div class="search-group">
+                            <label for="searchProject"><i class="fas fa-filter"></i> 项目筛选</label>
+                            <div class="multiselect-container">
+                                <div class="multiselect-input" id="multiselectInput">
+                                    选择项目...
+                                </div>
+                                <div class="multiselect-dropdown" id="multiselectDropdown">
+                                    <div class="multiselect-search">
+                                        <input type="text" id="multiselectSearch" placeholder="搜索项目...">
+                                    </div>
+                                    <div class="multiselect-options" id="multiselectOptions">
+                                        <!-- 动态填充 -->
+                                    </div>
+                                </div>
+                                <div class="multiselect-selected" id="multiselectSelected">
+                                    <!-- 动态填充 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="buttons">
+                        <button class="btn btn-primary" id="searchBtn"><i class="fas fa-search"></i> 查询</button>
+                        <button class="btn btn-secondary" id="resetSearchBtn"><i class="fas fa-times"></i> 重置查询</button>
+                    </div>
+                    <div class="search-results-info" id="searchResultsInfo">
+                        显示全部记录
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button class="btn btn-success" id="exportBtn"><i class="fas fa-file-export"></i> 导出数据(XLSX)</button>
+                    <button class="btn btn-danger" id="clearBtn"><i class="fas fa-trash"></i> 清空记录</button>
+                </div>
+                
+                <table id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>类型</th>
+                            <th>项目</th>
+                            <th>金额</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+                
+                <!-- 分页控件 -->
+                <div class="pagination">
+                    <div class="pagination-info" id="paginationInfo">
+                        第 1 页，共 1 页，每页 10 条记录
+                    </div>
+                    <div class="pagination-controls">
+                        <div class="page-size-selector">
+                            <span>每页显示:</span>
+                            <select id="pageSize">
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="200">200</option>
+                            </select>
+                        </div>
+                        <button class="pagination-btn" id="firstPageBtn" disabled>首页</button>
+                        <button class="pagination-btn" id="prevPageBtn" disabled>上一页</button>
+                        <span id="currentPageIndicator">1</span>
+                        <button class="pagination-btn" id="nextPageBtn" disabled>下一页</button>
+                        <button class="pagination-btn" id="lastPageBtn" disabled>末页</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 项目编辑模态框 -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-edit"></i> 添加/编辑项目</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="projectForm">
+                <div class="form-group">
+                    <label for="projectName"><i class="fas fa-tag"></i> 项目名称</label>
+                    <input type="text" id="projectName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="projectType"><i class="fas fa-exchange-alt"></i> 项目类型</label>
+                    <select id="projectType" required>
+                        <option value="income">收入项目 💰</option>
+                        <option value="expense">支出项目 💸</option>
+                    </select>
+                </div>
+                
+                <div class="buttons">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 保存</button>
+                    <button type="button" class="btn btn-secondary" id="cancelProjectBtn"><i class="fas fa-times"></i> 取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 浮动按钮 -->
+    <div class="floating-elements">
+        <div class="floating-btn primary" id="quickAddBtn" title="快速添加记录">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="floating-btn success" id="quickExportBtn" title="快速导出">
+            <i class="fas fa-file-export"></i>
+        </div>
+    </div>
+
+    <script>
+        // 初始化默认项目和账本数据
+        let projects = [
+            { id: 1, name: "工资", type: "income", emoji: "💰" },
+            { id: 2, name: "其他", type: "income", emoji: "💼" },
+            { id: 3, name: "饮食", type: "expense", emoji: "🍔" },
+            { id: 4, name: "衣服", type: "expense", emoji: "👕" },
+            { id: 5, name: "日用品", type: "expense", emoji: "🧴" },
+            { id: 6, name: "化妆品", type: "expense", emoji: "💄" },
+            { id: 7, name: "宠物", type: "expense", emoji: "🐶" },
+            { id: 8, name: "旅游", type: "expense", emoji: "✈️" },
+            { id: 9, name: "电动车", type: "expense", emoji: "🛵" }
+        ];
+
+        let records = [];
+        let editingProjectId = null;
+        let currentFilter = {
+            startDate: null,
+            endDate: null,
+            projects: []
+        };
+        
+        // 分页相关变量
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalPages = 1;
+        
+        // 导入相关变量
+        let importData = [];
+
+        // DOM 元素
+        const accountForm = document.getElementById('accountForm');
+        const projectForm = document.getElementById('projectForm');
+        const projectSelect = document.getElementById('project');
+        const projectList = document.getElementById('projectList');
+        const recordsTable = document.getElementById('recordsTable').getElementsByTagName('tbody')[0];
+        const totalAmountElement = document.getElementById('totalAmount');
+        const projectModal = document.getElementById('projectModal');
+        const addProjectBtn = document.getElementById('addProjectBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const cancelProjectBtn = document.getElementById('cancelProjectBtn');
+        const closeModalBtn = document.querySelector('.close');
+        const searchBtn = document.getElementById('searchBtn');
+        const resetSearchBtn = document.getElementById('resetSearchBtn');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const searchResultsInfo = document.getElementById('searchResultsInfo');
+        const quickAddBtn = document.getElementById('quickAddBtn');
+        const quickExportBtn = document.getElementById('quickExportBtn');
+        
+        // 分页相关DOM元素
+        const pageSizeSelect = document.getElementById('pageSize');
+        const firstPageBtn = document.getElementById('firstPageBtn');
+        const prevPageBtn = document.getElementById('prevPageBtn');
+        const nextPageBtn = document.getElementById('nextPageBtn');
+        const lastPageBtn = document.getElementById('lastPageBtn');
+        const currentPageIndicator = document.getElementById('currentPageIndicator');
+        const paginationInfo = document.getElementById('paginationInfo');
+        
+        // 多选下拉框相关DOM元素
+        const multiselectInput = document.getElementById('multiselectInput');
+        const multiselectDropdown = document.getElementById('multiselectDropdown');
+        const multiselectSearch = document.getElementById('multiselectSearch');
+        const multiselectOptions = document.getElementById('multiselectOptions');
+        const multiselectSelected = document.getElementById('multiselectSelected');
+        
+        // 导入相关DOM元素
+        const importFileInput = document.getElementById('importFile');
+        const downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importPreview = document.getElementById('importPreview');
+        const importPreviewBody = document.getElementById('importPreviewBody');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认日期为今天
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            
+            // 从本地存储加载数据
+            loadData();
+            
+            // 更新项目选择列表
+            updateProjectSelect();
+            
+            // 更新项目显示列表
+            updateProjectList();
+            
+            // 更新查询项目选择列表
+            updateMultiselectOptions();
+            
+            // 更新记录表格
+            updateRecordsTable();
+            
+            // 更新总金额
+            updateTotalAmount();
+            
+            // 更新分页信息
+            updatePaginationInfo();
+            
+            // 事件监听器
+            accountForm.addEventListener('submit', addRecord);
+            projectForm.addEventListener('submit', saveProject);
+            addProjectBtn.addEventListener('click', openProjectModal);
+            exportBtn.addEventListener('click', exportData);
+            clearBtn.addEventListener('click', clearRecords);
+            resetBtn.addEventListener('click', resetForm);
+            cancelProjectBtn.addEventListener('click', closeProjectModal);
+            closeModalBtn.addEventListener('click', closeProjectModal);
+            searchBtn.addEventListener('click', applyFilter);
+            resetSearchBtn.addEventListener('click', resetFilter);
+            quickAddBtn.addEventListener('click', scrollToForm);
+            quickExportBtn.addEventListener('click', exportData);
+            
+            // 分页事件监听器
+            pageSizeSelect.addEventListener('change', changePageSize);
+            firstPageBtn.addEventListener('click', () => changePage(1));
+            prevPageBtn.addEventListener('click', goToPrevPage);
+            nextPageBtn.addEventListener('click', goToNextPage);
+            lastPageBtn.addEventListener('click', goToLastPage);
+            
+            // 多选下拉框事件监听器
+            multiselectInput.addEventListener('click', toggleMultiselectDropdown);
+            multiselectSearch.addEventListener('input', filterMultiselectOptions);
+            
+            // 导入事件监听器
+            importFileInput.addEventListener('change', handleFileSelect);
+            downloadTemplateBtn.addEventListener('click', downloadTemplate);
+            importBtn.addEventListener('click', importRecords);
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', function(event) {
+                if (event.target === projectModal) {
+                    closeProjectModal();
+                }
+                if (!multiselectInput.contains(event.target) && !multiselectDropdown.contains(event.target)) {
+                    multiselectDropdown.classList.remove('active');
+                }
+            });
+        });
+
+        // 滚动到表单区域
+        function scrollToForm() {
+            document.querySelector('.form-section').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+
+        // 加载本地存储的数据
+        function loadData() {
+            const savedProjects = localStorage.getItem('accountProjects');
+            const savedRecords = localStorage.getItem('accountRecords');
+            
+            if (savedProjects) {
+                projects = JSON.parse(savedProjects);
+            }
+            
+            if (savedRecords) {
+                records = JSON.parse(savedRecords);
+            }
+        }
+
+        // 保存数据到本地存储
+        function saveData() {
+            localStorage.setItem('accountProjects', JSON.stringify(projects));
+            localStorage.setItem('accountRecords', JSON.stringify(records));
+        }
+
+        // 更新项目选择下拉列表
+        function updateProjectSelect() {
+            const type = document.getElementById('type').value;
+            projectSelect.innerHTML = '';
+            
+            const filteredProjects = projects.filter(project => project.type === type);
+            
+            filteredProjects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.emoji || '📁'} ${project.name}`;
+                projectSelect.appendChild(option);
+            });
+        }
+
+        // 更新多选下拉框选项
+        function updateMultiselectOptions() {
+            multiselectOptions.innerHTML = '';
+            
+            projects.forEach(project => {
+                const option = document.createElement('div');
+                option.className = 'multiselect-option';
+                option.dataset.id = project.id;
+                option.innerHTML = `
+                    <span class="emoji">${project.emoji || '📁'}</span>
+                    <span>${project.name}</span>
+                    <span style="margin-left: auto; font-size: 0.8rem; color: #999;">${project.type === 'income' ? '收入' : '支出'}</span>
+                `;
+                
+                option.addEventListener('click', () => toggleProjectSelection(project.id));
+                
+                // 如果项目已被选中，添加选中样式
+                if (currentFilter.projects.includes(project.id)) {
+                    option.classList.add('selected');
+                }
+                
+                multiselectOptions.appendChild(option);
+            });
+            
+            updateMultiselectSelected();
+        }
+
+        // 切换项目选择状态
+        function toggleProjectSelection(projectId) {
+            const index = currentFilter.projects.indexOf(projectId);
+            
+            if (index === -1) {
+                // 添加项目
+                currentFilter.projects.push(projectId);
+            } else {
+                // 移除项目
+                currentFilter.projects.splice(index, 1);
+            }
+            
+            // 更新UI
+            updateMultiselectOptions();
+        }
+
+        // 更新已选项目显示
+        function updateMultiselectSelected() {
+            multiselectSelected.innerHTML = '';
+            
+            if (currentFilter.projects.length === 0) {
+                multiselectInput.textContent = '选择项目...';
+                return;
+            }
+            
+            multiselectInput.textContent = `已选择 ${currentFilter.projects.length} 个项目`;
+            
+            currentFilter.projects.forEach(projectId => {
+                const project = projects.find(p => p.id === projectId);
+                if (project) {
+                    const tag = document.createElement('div');
+                    tag.className = 'selected-tag';
+                    tag.innerHTML = `
+                        <span class="emoji">${project.emoji || '📁'}</span>
+                        <span>${project.name}</span>
+                        <span class="remove" data-id="${project.id}">×</span>
+                    `;
+                    
+                    tag.querySelector('.remove').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleProjectSelection(project.id);
+                    });
+                    
+                    multiselectSelected.appendChild(tag);
+                }
+            });
+        }
+
+        // 切换多选下拉框显示状态
+        function toggleMultiselectDropdown() {
+            multiselectDropdown.classList.toggle('active');
+            if (multiselectDropdown.classList.contains('active')) {
+                multiselectSearch.focus();
+            }
+        }
+
+        // 过滤多选下拉框选项
+        function filterMultiselectOptions() {
+            const searchTerm = multiselectSearch.value.toLowerCase();
+            const options = multiselectOptions.querySelectorAll('.multiselect-option');
+            
+            options.forEach(option => {
+                const text = option.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    option.style.display = 'flex';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+        }
+
+        // 更新项目显示列表
+        function updateProjectList() {
+            projectList.innerHTML = '';
+            
+            if (projects.length === 0) {
+                projectList.innerHTML = '<div class="empty-state"><p>暂无项目，请添加</p></div>';
+                return;
+            }
+            
+            projects.forEach(project => {
+                const projectItem = document.createElement('div');
+                projectItem.className = `project-item ${project.type}`;
+                projectItem.innerHTML = `
+                    <span class="emoji">${project.emoji || '📁'}</span>
+                    <span>${project.name}</span>
+                    <div class="actions">
+                        <button class="btn btn-secondary edit-project" data-id="${project.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger delete-project" data-id="${project.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                projectList.appendChild(projectItem);
+            });
+            
+            // 添加编辑和删除项目的事件监听
+            document.querySelectorAll('.edit-project').forEach(button => {
+                button.addEventListener('click', function() {
+                    const projectId = parseInt(this.getAttribute('data-id'));
+                    editProject(projectId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-project').forEach(button => {
+                button.addEventListener('click', function() {
+                    const projectId = parseInt(this.getAttribute('data-id'));
+                    deleteProject(projectId);
+                });
+            });
+        }
+
+        // 添加新记录
+        function addRecord(e) {
+            e.preventDefault();
+            
+            const date = document.getElementById('date').value;
+            const type = document.getElementById('type').value;
+            const projectId = parseInt(document.getElementById('project').value);
+            let amount = parseFloat(document.getElementById('amount').value);
+            const note = document.getElementById('note').value;
+            
+            // 如果是支出，金额转为负数
+            if (type === 'expense') {
+                amount = -Math.abs(amount);
+            }
+            
+            // 获取项目名称
+            const project = projects.find(p => p.id === projectId);
+            const projectName = project ? project.name : '未知';
+            const projectEmoji = project ? project.emoji : '📁';
+            
+            // 创建新记录
+            const newRecord = {
+                id: Date.now(),
+                date,
+                type,
+                projectId,
+                projectName,
+                projectEmoji,
+                amount,
+                note
+            };
+            
+            records.push(newRecord);
+            saveData();
+            updateRecordsTable();
+            updateTotalAmount();
+            resetForm();
+            
+            // 显示成功提示
+            showNotification(`成功添加${type === 'income' ? '收入' : '支出'}记录！`, 'success');
+        }
+
+        // 显示通知
+        function showNotification(message, type) {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div style="position: fixed; top: 20px; right: 20px; background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'}; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 1000; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // 3秒后移除通知
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // 更新记录表格
+        function updateRecordsTable() {
+            recordsTable.innerHTML = '';
+            
+            // 应用筛选条件
+            let filteredRecords = applyFilterToRecords(records);
+            
+            // 计算分页
+            totalPages = Math.ceil(filteredRecords.length / pageSize);
+            if (currentPage > totalPages) {
+                currentPage = totalPages || 1;
+            }
+            
+            // 获取当前页的记录
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const currentPageRecords = filteredRecords.slice(startIndex, endIndex);
+            
+            if (currentPageRecords.length === 0) {
+                const emptyState = document.createElement('tr');
+                emptyState.innerHTML = `
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <p>暂无记录</p>
+                            <p>点击"添加记录"开始记账吧！</p>
+                        </div>
+                    </td>
+                `;
+                recordsTable.appendChild(emptyState);
+                return;
+            }
+            
+            // 按日期排序，最新的在前面
+            currentPageRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            currentPageRecords.forEach(record => {
+                const row = recordsTable.insertRow();
+                
+                // 日期
+                const dateCell = row.insertCell(0);
+                dateCell.textContent = record.date;
+                
+                // 类型
+                const typeCell = row.insertCell(1);
+                typeCell.innerHTML = `
+                    <span class="type-indicator ${record.type === 'income' ? 'type-income' : 'type-expense'}"></span>
+                    ${record.type === 'income' ? '收入' : '支出'}
+                `;
+                
+                // 项目
+                const projectCell = row.insertCell(2);
+                projectCell.innerHTML = `<span class="emoji">${record.projectEmoji || '📁'}</span> ${record.projectName}`;
+                
+                // 金额
+                const amountCell = row.insertCell(3);
+                amountCell.textContent = `¥${Math.abs(record.amount).toFixed(2)}`;
+                amountCell.className = record.type === 'income' ? 'income' : 'expense';
+                
+                // 备注
+                const noteCell = row.insertCell(4);
+                noteCell.textContent = record.note || '-';
+                
+                // 操作
+                const actionCell = row.insertCell(5);
+                actionCell.innerHTML = `<button class="btn btn-danger delete-record" data-id="${record.id}"><i class="fas fa-trash"></i></button>`;
+            });
+            
+            // 添加删除记录的事件监听
+            document.querySelectorAll('.delete-record').forEach(button => {
+                button.addEventListener('click', function() {
+                    const recordId = parseInt(this.getAttribute('data-id'));
+                    deleteRecord(recordId);
+                });
+            });
+            
+            // 更新搜索结果信息
+            updateSearchResultsInfo(filteredRecords.length);
+            
+            // 更新分页信息
+            updatePaginationInfo();
+        }
+
+        // 应用筛选条件到记录
+        function applyFilterToRecords(records) {
+            let filtered = [...records];
+            
+            // 日期筛选
+            if (currentFilter.startDate) {
+                filtered = filtered.filter(record => record.date >= currentFilter.startDate);
+            }
+            
+            if (currentFilter.endDate) {
+                filtered = filtered.filter(record => record.date <= currentFilter.endDate);
+            }
+            
+            // 项目筛选
+            if (currentFilter.projects.length > 0) {
+                filtered = filtered.filter(record => currentFilter.projects.includes(record.projectId));
+            }
+            
+            return filtered;
+        }
+
+        // 更新搜索结果信息
+        function updateSearchResultsInfo(count) {
+            let infoText = `显示 <span class="record-count">${count}</span> 条记录`;
+            
+            if (currentFilter.startDate || currentFilter.endDate || currentFilter.projects.length > 0) {
+                infoText += "（已应用筛选条件）";
+            } else {
+                infoText += "（全部记录）";
+            }
+            
+            searchResultsInfo.innerHTML = infoText;
+        }
+
+        // 删除记录
+        function deleteRecord(recordId) {
+            if (confirm('确定要删除这条记录吗？')) {
+                records = records.filter(record => record.id !== recordId);
+                saveData();
+                updateRecordsTable();
+                updateTotalAmount();
+                showNotification('记录已删除！', 'success');
+            }
+        }
+
+        // 更新总金额
+        function updateTotalAmount() {
+            const total = records.reduce((sum, record) => sum + record.amount, 0);
+            totalAmountElement.textContent = `¥${total.toFixed(2)}`;
+            
+            // 根据总金额设置颜色
+            if (total >= 0) {
+                totalAmountElement.style.color = '#2E8B57';
+            } else {
+                totalAmountElement.style.color = '#FF6B6B';
+            }
+        }
+
+        // 重置表单
+        function resetForm() {
+            accountForm.reset();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            updateProjectSelect();
+        }
+
+        // 打开项目模态框
+        function openProjectModal() {
+            editingProjectId = null;
+            document.getElementById('projectName').value = '';
+            document.getElementById('projectType').value = 'income';
+            projectModal.style.display = 'flex';
+        }
+
+        // 关闭项目模态框
+        function closeProjectModal() {
+            projectModal.style.display = 'none';
+        }
+
+        // 编辑项目
+        function editProject(projectId) {
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                editingProjectId = projectId;
+                document.getElementById('projectName').value = project.name;
+                document.getElementById('projectType').value = project.type;
+                projectModal.style.display = 'flex';
+            }
+        }
+
+        // 保存项目
+        function saveProject(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('projectName').value.trim();
+            const type = document.getElementById('projectType').value;
+            
+            if (!name) {
+                alert('请输入项目名称');
+                return;
+            }
+            
+            // 检查项目名称是否已存在（排除当前编辑的项目）
+            const existingProject = projects.find(p => 
+                p.name.toLowerCase() === name.toLowerCase() && 
+                p.id !== editingProjectId
+            );
+            
+            if (existingProject) {
+                alert('项目名称已存在');
+                return;
+            }
+            
+            if (editingProjectId) {
+                // 更新现有项目
+                const projectIndex = projects.findIndex(p => p.id === editingProjectId);
+                if (projectIndex !== -1) {
+                    projects[projectIndex].name = name;
+                    projects[projectIndex].type = type;
+                }
+                showNotification('项目已更新！', 'success');
+            } else {
+                // 添加新项目
+                const newId = projects.length > 0 ? Math.max(...projects.map(p => p.id)) + 1 : 1;
+                projects.push({
+                    id: newId,
+                    name,
+                    type,
+                    emoji: type === 'income' ? '💰' : '💸'
+                });
+                showNotification('项目已添加！', 'success');
+            }
+            
+            saveData();
+            updateProjectSelect();
+            updateProjectList();
+            updateMultiselectOptions();
+            closeProjectModal();
+        }
+
+        // 删除项目
+        function deleteProject(projectId) {
+            // 检查是否有记录使用此项目
+            const recordsUsingProject = records.filter(record => record.projectId === projectId);
+            
+            if (recordsUsingProject.length > 0) {
+                alert('无法删除该项目，因为有记录正在使用它。请先删除相关记录。');
+                return;
+            }
+            
+            if (confirm('确定要删除这个项目吗？')) {
+                projects = projects.filter(project => project.id !== projectId);
+                saveData();
+                updateProjectSelect();
+                updateProjectList();
+                updateMultiselectOptions();
+                showNotification('项目已删除！', 'success');
+            }
+        }
+
+        // 应用筛选条件
+        function applyFilter() {
+            currentFilter.startDate = startDateInput.value;
+            currentFilter.endDate = endDateInput.value;
+            
+            // 重置到第一页
+            currentPage = 1;
+            
+            updateRecordsTable();
+        }
+
+        // 重置筛选条件
+        function resetFilter() {
+            startDateInput.value = '';
+            endDateInput.value = '';
+            currentFilter = {
+                startDate: null,
+                endDate: null,
+                projects: []
+            };
+            
+            // 重置到第一页
+            currentPage = 1;
+            
+            updateMultiselectOptions();
+            updateRecordsTable();
+        }
+
+        // 导出数据为XLSX格式
+        function exportData() {
+            if (records.length === 0) {
+                alert('没有数据可导出');
+                return;
+            }
+            
+            // 应用筛选条件
+            let dataToExport = applyFilterToRecords(records);
+            
+            // 准备导出数据
+            const exportData = [
+                ['日期', '类型', '项目', '金额', '备注']
+            ];
+            
+            dataToExport.forEach(record => {
+                const typeText = record.type === 'income' ? '收入' : '支出';
+                const amountText = record.type === 'income' ? 
+                    `+${record.amount.toFixed(2)}` : 
+                    `-${Math.abs(record.amount).toFixed(2)}`;
+                
+                exportData.push([
+                    record.date,
+                    typeText,
+                    record.projectName,
+                    amountText,
+                    record.note || ''
+                ]);
+            });
+            
+            // 创建工作簿
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "账本记录");
+            
+            // 生成文件名
+            const today = new Date().toISOString().split('T')[0];
+            const fileName = `账本记录_${today}.xlsx`;
+            
+            // 导出文件
+            XLSX.writeFile(wb, fileName);
+            
+            showNotification('数据导出成功！', 'success');
+        }
+
+        // 清空记录
+        function clearRecords() {
+            if (records.length === 0) {
+                alert('没有记录可清空');
+                return;
+            }
+            
+            if (confirm('确定要清空所有记录吗？此操作不可撤销。')) {
+                records = [];
+                saveData();
+                updateRecordsTable();
+                updateTotalAmount();
+                showNotification('所有记录已清空！', 'success');
+            }
+        }
+
+        // 分页相关函数
+        function changePageSize() {
+            pageSize = parseInt(pageSizeSelect.value);
+            currentPage = 1;
+            updateRecordsTable();
+        }
+        
+        function changePage(page) {
+            currentPage = page;
+            updateRecordsTable();
+        }
+        
+        function goToPrevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updateRecordsTable();
+            }
+        }
+        
+        function goToNextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                updateRecordsTable();
+            }
+        }
+        
+        function goToLastPage() {
+            currentPage = totalPages;
+            updateRecordsTable();
+        }
+        
+        function updatePaginationInfo() {
+            const filteredRecords = applyFilterToRecords(records);
+            const totalRecords = filteredRecords.length;
+            const startRecord = (currentPage - 1) * pageSize + 1;
+            const endRecord = Math.min(currentPage * pageSize, totalRecords);
+            
+            paginationInfo.innerHTML = `第 ${currentPage} 页，共 ${totalPages} 页，每页 ${pageSize} 条记录`;
+            currentPageIndicator.textContent = currentPage;
+            
+            // 更新分页按钮状态
+            firstPageBtn.disabled = currentPage === 1;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+            lastPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // 导入相关函数
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // 获取第一个工作表
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // 验证数据格式
+                    if (jsonData.length < 2 || jsonData[0].join(',') !== '日期,类型,项目,金额,备注') {
+                        alert('文件格式不正确，请使用下载的模板文件！');
+                        return;
+                    }
+                    
+                    // 解析数据
+                    importData = [];
+                    let hasError = false;
+                    
+                    for (let i = 1; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row.length < 4) continue;
+                        
+                        const date = row[0];
+                        const type = row[1];
+                        const projectName = row[2];
+                        const amount = parseFloat(row[3]);
+                        const note = row[4] || '';
+                        
+                        // 验证数据
+                        if (!date || !type || !projectName || isNaN(amount)) {
+                            alert(`第 ${i+1} 行数据格式不正确，跳过该行`);
+                            hasError = true;
+                            continue;
+                        }
+                        
+                        // 验证类型
+                        if (type !== '收入' && type !== '支出') {
+                            alert(`第 ${i+1} 行类型不正确，应为"收入"或"支出"，跳过该行`);
+                            hasError = true;
+                            continue;
+                        }
+                        
+                        // 查找项目
+                        const project = projects.find(p => p.name === projectName);
+                        if (!project) {
+                            alert(`第 ${i+1} 行项目"${projectName}"不存在，跳过该行`);
+                            hasError = true;
+                            continue;
+                        }
+                        
+                        // 验证项目类型是否匹配
+                        if ((type === '收入' && project.type !== 'income') || 
+                            (type === '支出' && project.type !== 'expense')) {
+                            alert(`第 ${i+1} 行项目"${projectName}"类型不匹配，跳过该行`);
+                            hasError = true;
+                            continue;
+                        }
+                        
+                        // 添加到导入数据
+                        importData.push({
+                            id: Date.now() + i,
+                            date,
+                            type: type === '收入' ? 'income' : 'expense',
+                            projectId: project.id,
+                            projectName,
+                            projectEmoji: project.emoji,
+                            amount: type === '收入' ? amount : -amount,
+                            note
+                        });
+                    }
+                    
+                    if (importData.length > 0) {
+                        // 显示预览
+                        showImportPreview();
+                        importBtn.disabled = false;
+                        
+                        if (hasError) {
+                            showNotification('部分数据导入失败，请查看提示信息', 'danger');
+                        } else {
+                            showNotification(`成功解析 ${importData.length} 条记录，点击"导入数据"按钮完成导入`, 'success');
+                        }
+                    } else {
+                        alert('没有找到有效的记录数据');
+                        importBtn.disabled = true;
+                        importPreview.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('导入错误:', error);
+                    alert('文件读取失败，请检查文件格式');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function showImportPreview() {
+            importPreviewBody.innerHTML = '';
+            
+            // 只显示前5条记录作为预览
+            const previewData = importData.slice(0, 5);
+            
+            previewData.forEach(record => {
+                const row = importPreviewBody.insertRow();
+                
+                // 日期
+                const dateCell = row.insertCell(0);
+                dateCell.textContent = record.date;
+                
+                // 类型
+                const typeCell = row.insertCell(1);
+                typeCell.textContent = record.type === 'income' ? '收入' : '支出';
+                typeCell.className = record.type === 'income' ? 'income' : 'expense';
+                
+                // 项目
+                const projectCell = row.insertCell(2);
+                projectCell.innerHTML = `<span class="emoji">${record.projectEmoji || '📁'}</span> ${record.projectName}`;
+                
+                // 金额
+                const amountCell = row.insertCell(3);
+                amountCell.textContent = `¥${Math.abs(record.amount).toFixed(2)}`;
+                amountCell.className = record.type === 'income' ? 'income' : 'expense';
+                
+                // 备注
+                const noteCell = row.insertCell(4);
+                noteCell.textContent = record.note || '-';
+            });
+            
+            if (importData.length > 5) {
+                const infoRow = importPreviewBody.insertRow();
+                const infoCell = infoRow.insertCell(0);
+                infoCell.colSpan = 5;
+                infoCell.textContent = `... 还有 ${importData.length - 5} 条记录`;
+                infoCell.style.textAlign = 'center';
+                infoCell.style.fontStyle = 'italic';
+                infoCell.style.color = '#999';
+            }
+            
+            importPreview.style.display = 'block';
+        }
+        
+        function importRecords() {
+            if (importData.length === 0) {
+                alert('没有可导入的数据');
+                return;
+            }
+            
+            // 将导入数据添加到记录中
+            records = [...importData, ...records];
+            saveData();
+            
+            // 更新UI
+            updateRecordsTable();
+            updateTotalAmount();
+            
+            // 重置导入状态
+            importFileInput.value = '';
+            importBtn.disabled = true;
+            importPreview.style.display = 'none';
+            importData = [];
+            
+            showNotification(`成功导入 ${importData.length} 条记录！`, 'success');
+        }
+        
+        function downloadTemplate() {
+            // 创建模板数据
+            const templateData = [
+                ['日期', '类型', '项目', '金额', '备注'],
+                ['2023-01-01', '收入', '工资', '5000', '一月工资'],
+                ['2023-01-02', '支出', '饮食', '50', '午餐'],
+                ['2023-01-03', '支出', '衣服', '200', '新衣服'],
+                ['2023-01-04', '收入', '其他', '100', '红包'],
+                ['2023-01-05', '支出', '日用品', '80', '洗发水']
+            ];
+            
+            // 创建工作簿
+            const ws = XLSX.utils.aoa_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "账本记录模板");
+            
+            // 设置列宽
+            const colWidths = [
+                { wch: 12 }, // 日期
+                { wch: 8 },  // 类型
+                { wch: 12 }, // 项目
+                { wch: 10 }, // 金额
+                { wch: 20 }  // 备注
+            ];
+            ws['!cols'] = colWidths;
+            
+            // 导出文件
+            XLSX.writeFile(wb, "账本记录模板.xlsx");
+            
+            showNotification('模板下载成功！', 'success');
+        }
+
+        // 监听类型变化，更新项目列表
+        document.getElementById('type').addEventListener('change', updateProjectSelect);
+    </script>
+</body>
+</html>
