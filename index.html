@@ -6,6 +6,8 @@
     <title>记账本</title>
     <!-- 引入SheetJS库用于导出XLSX -->
     <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <!-- 引入Chart.js用于图表绘制 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -113,7 +115,7 @@
             gap: 20px;
         }
         
-        .form-section, .records-section {
+        .form-section, .records-section, .analysis-section {
             background: var(--card-bg);
             border-radius: var(--radius);
             padding: 20px;
@@ -141,6 +143,16 @@
             width: 100%;
             height: 4px;
             background: var(--accent);
+        }
+        
+        .analysis-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: #A8E6CF;
         }
         
         .section-title {
@@ -462,7 +474,7 @@
                 flex-direction: row;
             }
             
-            .form-section, .records-section {
+            .form-section, .records-section, .analysis-section {
                 flex: 1;
                 min-width: 300px;
             }
@@ -862,15 +874,28 @@
                 background: rgba(255, 141, 199, 0.1);
             }
             
+            .mobile-tab.active::after {
+                content: '';
+                position: absolute;
+                bottom: -3px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0;
+                height: 0;
+                border-left: 8px solid transparent;
+                border-right: 8px solid transparent;
+                border-top: 8px solid var(--primary);
+            }
+            
             .mobile-tab:active {
                 background: rgba(255, 141, 199, 0.1);
             }
             
-            .form-section, .records-section {
+            .form-section, .records-section, .analysis-section {
                 display: none;
             }
             
-            .form-section.active, .records-section.active {
+            .form-section.active, .records-section.active, .analysis-section.active {
                 display: block;
             }
             
@@ -1009,10 +1034,118 @@
             color: var(--text);
         }
         
+        /* 图表容器样式 */
+        .chart-container {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid #F0F0F0;
+            position: relative;
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chart-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        
+        .chart-control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chart-control-group label {
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+        
+        .chart-control-group select {
+            padding: 8px 12px;
+            min-height: 36px;
+            width: auto;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        
+        .no-data-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        .chart-summary {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(163, 216, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .chart-summary-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .chart-summary-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        @media (min-width: 992px) {
+            .analysis-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
         /* 移动端日期选择器优化 */
         @media (max-width: 767px) {
             input[type="date"] {
                 font-size: 16px; /* 防止iOS缩放 */
+            }
+            
+            .chart-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .chart-control-group {
+                width: 100%;
+            }
+            
+            .chart-control-group select {
+                width: 100%;
+            }
+            
+            .chart-wrapper {
+                height: 250px;
             }
         }
     </style>
@@ -1033,6 +1166,7 @@
         <div class="mobile-tabs">
             <div class="mobile-tab active" data-tab="form"><i class="fas fa-plus-circle"></i> 记账</div>
             <div class="mobile-tab" data-tab="records"><i class="fas fa-list-alt"></i> 记录</div>
+            <div class="mobile-tab" data-tab="analysis"><i class="fas fa-chart-line"></i> 分析</div>
             <div class="mobile-tab" data-tab="projects"><i class="fas fa-tags"></i> 项目</div>
         </div>
         
@@ -1214,6 +1348,164 @@
                 </div>
             </div>
             
+            <!-- 分析部分 -->
+            <div class="analysis-section" id="analysisTab">
+                <h2 class="section-title"><i class="fas fa-chart-line"></i> 收支分析</h2>
+                
+                <div class="search-section">
+                    <h3><i class="fas fa-calendar-alt"></i> 分析时间范围</h3>
+                    <div class="search-row">
+                        <div class="search-group">
+                            <label for="analysisStartDate"><i class="fas fa-calendar"></i> 开始日期</label>
+                            <input type="date" id="analysisStartDate">
+                        </div>
+                        <div class="search-group">
+                            <label for="analysisEndDate"><i class="fas fa-calendar"></i> 结束日期</label>
+                            <input type="date" id="analysisEndDate">
+                        </div>
+                    </div>
+                    <div class="buttons">
+                        <button class="btn btn-primary" id="updateAnalysisBtn"><i class="fas fa-sync-alt"></i> 更新分析</button>
+                        <button class="btn btn-secondary" id="resetAnalysisBtn"><i class="fas fa-times"></i> 重置时间</button>
+                    </div>
+                </div>
+                
+                <div class="analysis-grid">
+                    <!-- 支出各项目占比图 -->
+                    <div class="chart-container">
+                        <div class="chart-title"><i class="fas fa-chart-pie"></i> 支出项目占比</div>
+                        <div class="chart-controls">
+                            <div class="chart-control-group">
+                                <label>分组方式:</label>
+                                <select id="expenseGroupBy">
+                                    <option value="project">按项目</option>
+                                    <option value="month">按月</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="expensePieChart"></canvas>
+                            <div class="no-data-message" id="noExpenseData" style="display: none;">暂无支出数据</div>
+                        </div>
+                        <div class="chart-summary" id="expenseSummary" style="display: none;">
+                            <div class="chart-summary-item">
+                                <div>总支出</div>
+                                <div class="chart-summary-value" id="totalExpenseAmount">¥0.00</div>
+                            </div>
+                            <div class="chart-summary-item">
+                                <div>项目数量</div>
+                                <div class="chart-summary-value" id="expenseProjectCount">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 支出趋势分布图 -->
+                    <div class="chart-container">
+                        <div class="chart-title"><i class="fas fa-chart-line"></i> 支出趋势</div>
+                        <div class="chart-controls">
+                            <div class="chart-control-group">
+                                <label>项目:</label>
+                                <select id="expenseTrendProject">
+                                    <option value="all">全部项目</option>
+                                    <!-- 动态填充 -->
+                                </select>
+                            </div>
+                            <div class="chart-control-group">
+                                <label>分组:</label>
+                                <select id="expenseTrendGroup">
+                                    <option value="day">按日</option>
+                                    <option value="week">按周</option>
+                                    <option value="month">按月</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="expenseTrendChart"></canvas>
+                            <div class="no-data-message" id="noExpenseTrendData" style="display: none;">暂无支出趋势数据</div>
+                        </div>
+                        <div class="chart-summary" id="expenseTrendSummary" style="display: none;">
+                            <div class="chart-summary-item">
+                                <div>平均支出</div>
+                                <div class="chart-summary-value" id="avgExpenseAmount">¥0.00</div>
+                            </div>
+                            <div class="chart-summary-item">
+                                <div>最大支出</div>
+                                <div class="chart-summary-value" id="maxExpenseAmount">¥0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 收入趋势分布图 -->
+                    <div class="chart-container">
+                        <div class="chart-title"><i class="fas fa-chart-line"></i> 收入趋势</div>
+                        <div class="chart-controls">
+                            <div class="chart-control-group">
+                                <label>项目:</label>
+                                <select id="incomeTrendProject">
+                                    <option value="all">全部项目</option>
+                                    <!-- 动态填充 -->
+                                </select>
+                            </div>
+                            <div class="chart-control-group">
+                                <label>分组:</label>
+                                <select id="incomeTrendGroup">
+                                    <option value="day">按日</option>
+                                    <option value="week">按周</option>
+                                    <option value="month">按月</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="incomeTrendChart"></canvas>
+                            <div class="no-data-message" id="noIncomeTrendData" style="display: none;">暂无收入趋势数据</div>
+                        </div>
+                        <div class="chart-summary" id="incomeTrendSummary" style="display: none;">
+                            <div class="chart-summary-item">
+                                <div>平均收入</div>
+                                <div class="chart-summary-value" id="avgIncomeAmount">¥0.00</div>
+                            </div>
+                            <div class="chart-summary-item">
+                                <div>最大收入</div>
+                                <div class="chart-summary-value" id="maxIncomeAmount">¥0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 收支对比趋势图 -->
+                    <div class="chart-container">
+                        <div class="chart-title"><i class="fas fa-balance-scale"></i> 收支对比趋势</div>
+                        <div class="chart-controls">
+                            <div class="chart-control-group">
+                                <label>分组:</label>
+                                <select id="balanceTrendGroup">
+                                    <option value="day">按日</option>
+                                    <option value="week">按周</option>
+                                    <option value="month">按月</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-wrapper">
+                            <canvas id="balanceTrendChart"></canvas>
+                            <div class="no-data-message" id="noBalanceTrendData" style="display: none;">暂无收支对比数据</div>
+                        </div>
+                        <div class="chart-summary" id="balanceTrendSummary" style="display: none;">
+                            <div class="chart-summary-item">
+                                <div>总收入</div>
+                                <div class="chart-summary-value" id="totalIncomeAmount">¥0.00</div>
+                            </div>
+                            <div class="chart-summary-item">
+                                <div>总支出</div>
+                                <div class="chart-summary-value" id="totalExpenseTrendAmount">¥0.00</div>
+                            </div>
+                            <div class="chart-summary-item">
+                                <div>净收入</div>
+                                <div class="chart-summary-value" id="netIncomeAmount">¥0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- 项目管理部分（移动端专属） -->
             <div class="form-section" id="projectsTab">
                 <h2 class="section-title"><i class="fas fa-tags"></i> 项目管理</h2>
@@ -1289,9 +1581,9 @@
             <i class="fas fa-list-alt"></i>
             <span>记录</span>
         </button>
-        <button class="mobile-bottom-btn" data-action="stats">
-            <i class="fas fa-chart-pie"></i>
-            <span>统计</span>
+        <button class="mobile-bottom-btn" data-action="analysis">
+            <i class="fas fa-chart-line"></i>
+            <span>分析</span>
         </button>
         <button class="mobile-bottom-btn" data-action="export">
             <i class="fas fa-file-export"></i>
@@ -1314,22 +1606,21 @@
             { id: 6, name: "化妆品", type: "expense", emoji: "💄" },
             { id: 7, name: "衣服", type: "expense", emoji: "👕" },
             { id: 8, name: "宠物", type: "expense", emoji: "🐶" },
-{ id: 9, name: "话费", type: "expense", emoji: "📱" }, // 手机
-{ id: 10, name: "MaMa", type: "expense", emoji: "👩" }, // 女性头像 (妈妈)
-{ id: 11, name: "通勤", type: "expense", emoji: "🚇" }, // 地铁 (或 🚌 公交)
-{ id: 12, name: "房租", type: "expense", emoji: "🏠" }, // 房子
-{ id: 13, name: "水费", type: "expense", emoji: "💧" }, // 水滴
-{ id: 14, name: "电费", type: "expense", emoji: "⚡" }, // 闪电
-{ id: 15, name: "燃气费", type: "expense", emoji: "🔥" }, // 火焰
-{ id: 16, name: "电动车", type: "expense", emoji: "🛵" }, // 电动车
-{ id: 17, name: "旅游", type: "expense", emoji: "✈️" }, // 飞机
-{ id: 18, name: "电子蝴蝶", type: "expense", emoji: "🎮" }, // 游戏手柄 (电子产品)
-{ id: 19, name: "娱乐", type: "expense", emoji: "🎬" }, // 电影场记板
-{ id: 20, name: "医药", type: "expense", emoji: "💊" }, // 药丸
-{ id: 21, name: "礼物", type: "expense", emoji: "🎁" }, // 礼物盒
-{ id: 22, name: "饰品", type: "expense", emoji: "💎" }, // 宝石
-{ id: 23, name: "设备", type: "expense", emoji: "💻" } // 笔记本电脑
-
+            { id: 9, name: "话费", type: "expense", emoji: "📱" },
+            { id: 10, name: "MaMa", type: "expense", emoji: "👩" },
+            { id: 11, name: "通勤", type: "expense", emoji: "🚇" },
+            { id: 12, name: "房租", type: "expense", emoji: "🏠" },
+            { id: 13, name: "水费", type: "expense", emoji: "💧" },
+            { id: 14, name: "电费", type: "expense", emoji: "⚡" },
+            { id: 15, name: "燃气费", type: "expense", emoji: "🔥" },
+            { id: 16, name: "电动车", type: "expense", emoji: "🛵" },
+            { id: 17, name: "旅游", type: "expense", emoji: "✈️" },
+            { id: 18, name: "电子蝴蝶", type: "expense", emoji: "🎮" },
+            { id: 19, name: "娱乐", type: "expense", emoji: "🎬" },
+            { id: 20, name: "医药", type: "expense", emoji: "💊" },
+            { id: 21, name: "礼物", type: "expense", emoji: "🎁" },
+            { id: 22, name: "饰品", type: "expense", emoji: "💎" },
+            { id: 23, name: "设备", type: "expense", emoji: "💻" }
         ];
 
         let records = [];
@@ -1339,6 +1630,18 @@
             endDate: null,
             projects: []
         };
+        
+        // 分析相关变量
+        let analysisFilter = {
+            startDate: null,
+            endDate: null
+        };
+        
+        // 图表实例
+        let expensePieChart = null;
+        let expenseTrendChart = null;
+        let incomeTrendChart = null;
+        let balanceTrendChart = null;
         
         // 分页相关变量
         let currentPage = 1;
@@ -1401,6 +1704,7 @@
         const mobileBottomBtns = document.querySelectorAll('.mobile-bottom-btn');
         const formTab = document.getElementById('formTab');
         const recordsTab = document.getElementById('recordsTab');
+        const analysisTab = document.getElementById('analysisTab');
         const projectsTab = document.getElementById('projectsTab');
         
         // 快速操作按钮
@@ -1409,6 +1713,18 @@
         const quickFoodBtn = document.getElementById('quickFoodBtn');
         const addIncomeProjectBtn = document.getElementById('addIncomeProjectBtn');
         const addExpenseProjectBtn = document.getElementById('addExpenseProjectBtn');
+        
+        // 分析相关DOM元素
+        const analysisStartDateInput = document.getElementById('analysisStartDate');
+        const analysisEndDateInput = document.getElementById('analysisEndDate');
+        const updateAnalysisBtn = document.getElementById('updateAnalysisBtn');
+        const resetAnalysisBtn = document.getElementById('resetAnalysisBtn');
+        const expenseGroupBySelect = document.getElementById('expenseGroupBy');
+        const expenseTrendProjectSelect = document.getElementById('expenseTrendProject');
+        const expenseTrendGroupSelect = document.getElementById('expenseTrendGroup');
+        const incomeTrendProjectSelect = document.getElementById('incomeTrendProject');
+        const incomeTrendGroupSelect = document.getElementById('incomeTrendGroup');
+        const balanceTrendGroupSelect = document.getElementById('balanceTrendGroup');
 
         // 初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -1422,6 +1738,12 @@
             startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
             endDateInput.value = today;
             
+            // 设置分析日期默认范围（最近90天）
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            analysisStartDateInput.value = ninetyDaysAgo.toISOString().split('T')[0];
+            analysisEndDateInput.value = today;
+            
             // 从本地存储加载数据
             loadData();
             
@@ -1431,8 +1753,8 @@
             // 更新项目选择列表
             updateProjectSelect();
             
-            // 设置默认项目为饮食（id为3）
-            document.getElementById('project').value = 3;
+            // 设置默认项目为吃饭（id为4）
+            document.getElementById('project').value = 4;
             
             // 更新项目显示列表
             updateProjectList();
@@ -1448,6 +1770,12 @@
             
             // 更新分页信息
             updatePaginationInfo();
+            
+            // 更新分析图表项目选择
+            updateAnalysisProjectSelects();
+            
+            // 初始化分析图表
+            initAnalysisCharts();
             
             // 事件监听器
             accountForm.addEventListener('submit', addRecord);
@@ -1481,7 +1809,7 @@
             
             // 移动端标签切换事件
             mobileTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
+                tab.addEventListener('click', function(e) {
                     const tabId = this.getAttribute('data-tab');
                     switchMobileTab(tabId);
                 });
@@ -1498,9 +1826,19 @@
             // 快速操作按钮事件
             quickIncomeBtn.addEventListener('click', () => quickAddRecord('income', '工资', 0));
             quickExpenseBtn.addEventListener('click', () => quickAddRecord('expense', '日用品', 0));
-            quickFoodBtn.addEventListener('click', () => quickAddRecord('expense', '饮食', 0));
+            quickFoodBtn.addEventListener('click', () => quickAddRecord('expense', '吃饭', 0));
             addIncomeProjectBtn.addEventListener('click', () => quickAddProject('income'));
             addExpenseProjectBtn.addEventListener('click', () => quickAddProject('expense'));
+            
+            // 分析事件监听器
+            updateAnalysisBtn.addEventListener('click', updateAnalysisCharts);
+            resetAnalysisBtn.addEventListener('click', resetAnalysisFilter);
+            expenseGroupBySelect.addEventListener('change', updateAnalysisCharts);
+            expenseTrendProjectSelect.addEventListener('change', updateAnalysisCharts);
+            expenseTrendGroupSelect.addEventListener('change', updateAnalysisCharts);
+            incomeTrendProjectSelect.addEventListener('change', updateAnalysisCharts);
+            incomeTrendGroupSelect.addEventListener('change', updateAnalysisCharts);
+            balanceTrendGroupSelect.addEventListener('change', updateAnalysisCharts);
             
             // 点击模态框外部关闭
             window.addEventListener('click', function(event) {
@@ -1564,10 +1902,14 @@
             });
             
             // 显示对应的内容区域
-            const tabs = [formTab, recordsTab, projectsTab];
+            const tabs = [formTab, recordsTab, analysisTab, projectsTab];
             tabs.forEach(tab => {
                 if (tab.id === `${tabId}Tab`) {
                     tab.classList.add('active');
+                    // 如果是分析标签，更新图表
+                    if (tabId === 'analysis') {
+                        updateAnalysisCharts();
+                    }
                 } else {
                     tab.classList.remove('active');
                 }
@@ -1586,8 +1928,8 @@
                 case 'records':
                     switchMobileTab('records');
                     break;
-                case 'stats':
-                    showStatsModal();
+                case 'analysis':
+                    switchMobileTab('analysis');
                     break;
                 case 'export':
                     exportData();
@@ -1598,113 +1940,589 @@
             }
         }
 
-        // 显示统计模态框
-        function showStatsModal() {
-            // 计算收入总额
-            const totalIncome = records
-                .filter(record => record.type === 'income')
-                .reduce((sum, record) => sum + Math.abs(record.amount), 0);
+        // 更新分析图表项目选择
+        function updateAnalysisProjectSelects() {
+            // 更新支出趋势项目选择
+            expenseTrendProjectSelect.innerHTML = '<option value="all">全部项目</option>';
+            projects.filter(p => p.type === 'expense').forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.emoji || '📁'} ${project.name}`;
+                expenseTrendProjectSelect.appendChild(option);
+            });
             
-            // 计算支出总额
-            const totalExpense = records
-                .filter(record => record.type === 'expense')
-                .reduce((sum, record) => sum + Math.abs(record.amount), 0);
+            // 更新收入趋势项目选择
+            incomeTrendProjectSelect.innerHTML = '<option value="all">全部项目</option>';
+            projects.filter(p => p.type === 'income').forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.emoji || '📁'} ${project.name}`;
+                incomeTrendProjectSelect.appendChild(option);
+            });
+        }
+
+        // 初始化分析图表
+        function initAnalysisCharts() {
+            // 销毁现有的图表实例
+            if (expensePieChart) expensePieChart.destroy();
+            if (expenseTrendChart) expenseTrendChart.destroy();
+            if (incomeTrendChart) incomeTrendChart.destroy();
+            if (balanceTrendChart) balanceTrendChart.destroy();
             
-            // 计算余额
-            const balance = totalIncome - totalExpense;
+            // 创建图表画布
+            const expensePieCtx = document.getElementById('expensePieChart').getContext('2d');
+            const expenseTrendCtx = document.getElementById('expenseTrendChart').getContext('2d');
+            const incomeTrendCtx = document.getElementById('incomeTrendChart').getContext('2d');
+            const balanceTrendCtx = document.getElementById('balanceTrendChart').getContext('2d');
             
-            // 计算各项目支出
-            const projectStats = {};
-            records.forEach(record => {
-                if (record.type === 'expense') {
-                    if (!projectStats[record.projectName]) {
-                        projectStats[record.projectName] = 0;
+            // 初始化图表实例
+            expensePieChart = new Chart(expensePieCtx, {
+                type: 'pie',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const value = context.parsed;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    label += `¥${value.toFixed(2)} (${percentage}%)`;
+                                    return label;
+                                }
+                            }
+                        }
                     }
-                    projectStats[record.projectName] += Math.abs(record.amount);
                 }
             });
             
-            // 创建统计内容
-            let statsHTML = `
-                <div style="margin-bottom: 20px;">
-                    <h3 style="color: var(--primary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-chart-pie"></i> 收支统计
-                    </h3>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                        <div style="color: #2E8B57;">
-                            <div style="font-size: 0.9rem;">总收入</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;">¥${totalIncome.toFixed(2)}</div>
-                        </div>
-                        <div style="color: #FF6B6B;">
-                            <div style="font-size: 0.9rem;">总支出</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;">¥${totalExpense.toFixed(2)}</div>
-                        </div>
-                        <div style="color: var(--primary);">
-                            <div style="font-size: 0.9rem;">结余</div>
-                            <div style="font-size: 1.5rem; font-weight: bold;">¥${balance.toFixed(2)}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            expenseTrendChart = new Chart(expenseTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '支出',
+                        data: [],
+                        borderColor: '#FF6B6B',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '支出: ¥' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
             
-            // 添加支出项目统计
-            if (Object.keys(projectStats).length > 0) {
-                statsHTML += `
-                    <div>
-                        <h4 style="color: var(--primary); margin-bottom: 10px;">支出项目统计</h4>
-                        <div style="max-height: 200px; overflow-y: auto;">
-                `;
-                
-                // 按金额排序
-                const sortedProjects = Object.entries(projectStats)
-                    .sort((a, b) => b[1] - a[1]);
-                
-                sortedProjects.forEach(([projectName, amount]) => {
-                    const percentage = totalExpense > 0 ? (amount / totalExpense * 100).toFixed(1) : 0;
-                    statsHTML += `
-                        <div style="margin-bottom: 10px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                <span>${projectName}</span>
-                                <span>¥${amount.toFixed(2)} (${percentage}%)</span>
-                            </div>
-                            <div style="height: 8px; background: #E8E8E8; border-radius: 4px; overflow: hidden;">
-                                <div style="height: 100%; width: ${percentage}%; background: var(--primary);"></div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                statsHTML += `</div></div>`;
+            incomeTrendChart = new Chart(incomeTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: '收入',
+                        data: [],
+                        borderColor: '#2E8B57',
+                        backgroundColor: 'rgba(46, 139, 87, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '收入: ¥' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            balanceTrendChart = new Chart(balanceTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: [],
+                            borderColor: '#2E8B57',
+                            backgroundColor: 'rgba(46, 139, 87, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: '支出',
+                            data: [],
+                            borderColor: '#FF6B6B',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: '净收入',
+                            data: [],
+                            borderColor: '#FF8DC7',
+                            backgroundColor: 'rgba(255, 141, 199, 0.1)',
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.4,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ¥' + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新分析图表
+        function updateAnalysisCharts() {
+            // 获取分析时间范围
+            const startDate = analysisStartDateInput.value;
+            const endDate = analysisEndDateInput.value;
+            
+            if (!startDate || !endDate) {
+                showNotification('请选择分析时间范围', 'danger');
+                return;
             }
             
-            // 创建模态框
-            const modal = document.createElement('div');
-            modal.className = 'modal';
-            modal.style.display = 'flex';
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3 class="modal-title"><i class="fas fa-chart-pie"></i> 统计信息</h3>
-                        <span class="close" onclick="this.parentElement.parentElement.parentElement.remove()">&times;</span>
-                    </div>
-                    <div>${statsHTML}</div>
-                    <div class="buttons" style="margin-top: 20px;">
-                        <button class="btn btn-primary" onclick="this.parentElement.parentElement.parentElement.remove()">
-                            <i class="fas fa-check"></i> 关闭
-                        </button>
-                    </div>
-                </div>
-            `;
+            if (new Date(startDate) > new Date(endDate)) {
+                showNotification('开始日期不能晚于结束日期', 'danger');
+                return;
+            }
             
-            // 添加到页面
-            document.body.appendChild(modal);
+            // 过滤出在时间范围内的记录
+            let filteredRecords = records.filter(record => {
+                const recordDate = new Date(record.date);
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                return recordDate >= start && recordDate <= end;
+            });
             
-            // 点击模态框外部关闭
-            modal.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    modal.remove();
+            if (filteredRecords.length === 0) {
+                showNotification('在选定时间范围内没有记录', 'danger');
+                return;
+            }
+            
+            // 更新支出饼图
+            updateExpensePieChart(filteredRecords);
+            
+            // 更新支出趋势图
+            updateExpenseTrendChart(filteredRecords);
+            
+            // 更新收入趋势图
+            updateIncomeTrendChart(filteredRecords);
+            
+            // 更新收支对比趋势图
+            updateBalanceTrendChart(filteredRecords);
+            
+            showNotification('分析图表已更新', 'success');
+        }
+
+        // 更新支出饼图
+        function updateExpensePieChart(filteredRecords) {
+            // 筛选支出记录
+            const expenseRecords = filteredRecords.filter(record => record.type === 'expense');
+            
+            if (expenseRecords.length === 0) {
+                document.getElementById('noExpenseData').style.display = 'block';
+                document.getElementById('expenseSummary').style.display = 'none';
+                expensePieChart.data.labels = [];
+                expensePieChart.data.datasets[0].data = [];
+                expensePieChart.update();
+                return;
+            }
+            
+            document.getElementById('noExpenseData').style.display = 'none';
+            document.getElementById('expenseSummary').style.display = 'flex';
+            
+            const groupBy = expenseGroupBySelect.value;
+            let labels = [];
+            let data = [];
+            let colors = [];
+            
+            if (groupBy === 'project') {
+                // 按项目分组
+                const projectMap = {};
+                
+                expenseRecords.forEach(record => {
+                    const projectName = record.projectName;
+                    const amount = Math.abs(record.amount);
+                    
+                    if (!projectMap[projectName]) {
+                        projectMap[projectName] = 0;
+                    }
+                    projectMap[projectName] += amount;
+                });
+                
+                // 按金额排序
+                const sortedProjects = Object.entries(projectMap)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                // 生成图表数据
+                sortedProjects.forEach(([projectName, amount], index) => {
+                    labels.push(projectName);
+                    data.push(amount);
+                    colors.push(getColorForIndex(index));
+                });
+                
+                // 更新摘要信息
+                const totalExpense = data.reduce((sum, val) => sum + val, 0);
+                document.getElementById('totalExpenseAmount').textContent = `¥${totalExpense.toFixed(2)}`;
+                document.getElementById('expenseProjectCount').textContent = labels.length;
+                
+            } else if (groupBy === 'month') {
+                // 按月分组
+                const monthMap = {};
+                
+                expenseRecords.forEach(record => {
+                    const date = new Date(record.date);
+                    const monthKey = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                    const monthLabel = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+                    const amount = Math.abs(record.amount);
+                    
+                    if (!monthMap[monthKey]) {
+                        monthMap[monthKey] = {
+                            label: monthLabel,
+                            amount: 0
+                        };
+                    }
+                    monthMap[monthKey].amount += amount;
+                });
+                
+                // 按月份排序
+                const sortedMonths = Object.values(monthMap)
+                    .sort((a, b) => {
+                        const aDate = new Date(a.label.replace('年', '-').replace('月', ''));
+                        const bDate = new Date(b.label.replace('年', '-').replace('月', ''));
+                        return aDate - bDate;
+                    });
+                
+                // 生成图表数据
+                sortedMonths.forEach((month, index) => {
+                    labels.push(month.label);
+                    data.push(month.amount);
+                    colors.push(getColorForIndex(index));
+                });
+                
+                // 更新摘要信息
+                const totalExpense = data.reduce((sum, val) => sum + val, 0);
+                document.getElementById('totalExpenseAmount').textContent = `¥${totalExpense.toFixed(2)}`;
+                document.getElementById('expenseProjectCount').textContent = labels.length;
+            }
+            
+            // 更新图表
+            expensePieChart.data.labels = labels;
+            expensePieChart.data.datasets[0].data = data;
+            expensePieChart.data.datasets[0].backgroundColor = colors;
+            expensePieChart.update();
+        }
+
+        // 更新支出趋势图
+        function updateExpenseTrendChart(filteredRecords) {
+            // 筛选支出记录
+            let expenseRecords = filteredRecords.filter(record => record.type === 'expense');
+            
+            // 根据选择的项目进行过滤
+            const selectedProject = expenseTrendProjectSelect.value;
+            if (selectedProject !== 'all') {
+                expenseRecords = expenseRecords.filter(record => record.projectId === parseInt(selectedProject));
+            }
+            
+            if (expenseRecords.length === 0) {
+                document.getElementById('noExpenseTrendData').style.display = 'block';
+                document.getElementById('expenseTrendSummary').style.display = 'none';
+                expenseTrendChart.data.labels = [];
+                expenseTrendChart.data.datasets[0].data = [];
+                expenseTrendChart.update();
+                return;
+            }
+            
+            document.getElementById('noExpenseTrendData').style.display = 'none';
+            document.getElementById('expenseTrendSummary').style.display = 'flex';
+            
+            const groupBy = expenseTrendGroupSelect.value;
+            const { labels, data } = groupRecordsByTime(expenseRecords, groupBy);
+            
+            // 更新摘要信息
+            const totalExpense = data.reduce((sum, val) => sum + val, 0);
+            const avgExpense = totalExpense / data.length;
+            const maxExpense = Math.max(...data);
+            
+            document.getElementById('avgExpenseAmount').textContent = `¥${avgExpense.toFixed(2)}`;
+            document.getElementById('maxExpenseAmount').textContent = `¥${maxExpense.toFixed(2)}`;
+            
+            // 更新图表
+            expenseTrendChart.data.labels = labels;
+            expenseTrendChart.data.datasets[0].data = data;
+            expenseTrendChart.update();
+        }
+
+        // 更新收入趋势图
+        function updateIncomeTrendChart(filteredRecords) {
+            // 筛选收入记录
+            let incomeRecords = filteredRecords.filter(record => record.type === 'income');
+            
+            // 根据选择的项目进行过滤
+            const selectedProject = incomeTrendProjectSelect.value;
+            if (selectedProject !== 'all') {
+                incomeRecords = incomeRecords.filter(record => record.projectId === parseInt(selectedProject));
+            }
+            
+            if (incomeRecords.length === 0) {
+                document.getElementById('noIncomeTrendData').style.display = 'block';
+                document.getElementById('incomeTrendSummary').style.display = 'none';
+                incomeTrendChart.data.labels = [];
+                incomeTrendChart.data.datasets[0].data = [];
+                incomeTrendChart.update();
+                return;
+            }
+            
+            document.getElementById('noIncomeTrendData').style.display = 'none';
+            document.getElementById('incomeTrendSummary').style.display = 'flex';
+            
+            const groupBy = incomeTrendGroupSelect.value;
+            const { labels, data } = groupRecordsByTime(incomeRecords, groupBy);
+            
+            // 更新摘要信息
+            const totalIncome = data.reduce((sum, val) => sum + val, 0);
+            const avgIncome = totalIncome / data.length;
+            const maxIncome = Math.max(...data);
+            
+            document.getElementById('avgIncomeAmount').textContent = `¥${avgIncome.toFixed(2)}`;
+            document.getElementById('maxIncomeAmount').textContent = `¥${maxIncome.toFixed(2)}`;
+            
+            // 更新图表
+            incomeTrendChart.data.labels = labels;
+            incomeTrendChart.data.datasets[0].data = data;
+            incomeTrendChart.update();
+        }
+
+        // 更新收支对比趋势图
+        function updateBalanceTrendChart(filteredRecords) {
+            // 分离收入和支出记录
+            const incomeRecords = filteredRecords.filter(record => record.type === 'income');
+            const expenseRecords = filteredRecords.filter(record => record.type === 'expense');
+            
+            if (incomeRecords.length === 0 && expenseRecords.length === 0) {
+                document.getElementById('noBalanceTrendData').style.display = 'block';
+                document.getElementById('balanceTrendSummary').style.display = 'none';
+                balanceTrendChart.data.labels = [];
+                balanceTrendChart.data.datasets[0].data = [];
+                balanceTrendChart.data.datasets[1].data = [];
+                balanceTrendChart.data.datasets[2].data = [];
+                balanceTrendChart.update();
+                return;
+            }
+            
+            document.getElementById('noBalanceTrendData').style.display = 'none';
+            document.getElementById('balanceTrendSummary').style.display = 'flex';
+            
+            const groupBy = balanceTrendGroupSelect.value;
+            
+            // 分组收入数据
+            const incomeData = groupRecordsByTime(incomeRecords, groupBy);
+            
+            // 分组支出数据
+            const expenseData = groupRecordsByTime(expenseRecords, groupBy);
+            
+            // 确保标签一致
+            let labels = [];
+            if (incomeData.labels.length > 0) {
+                labels = incomeData.labels;
+            } else {
+                labels = expenseData.labels;
+            }
+            
+            // 确保数据长度一致
+            const incomeValues = alignDataToLabels(incomeData.data, incomeData.labels, labels);
+            const expenseValues = alignDataToLabels(expenseData.data, expenseData.labels, labels);
+            
+            // 计算净收入
+            const netValues = incomeValues.map((income, index) => {
+                const expense = expenseValues[index] || 0;
+                return income - expense;
+            });
+            
+            // 更新摘要信息
+            const totalIncome = incomeValues.reduce((sum, val) => sum + val, 0);
+            const totalExpense = expenseValues.reduce((sum, val) => sum + val, 0);
+            const netIncome = totalIncome - totalExpense;
+            
+            document.getElementById('totalIncomeAmount').textContent = `¥${totalIncome.toFixed(2)}`;
+            document.getElementById('totalExpenseTrendAmount').textContent = `¥${totalExpense.toFixed(2)}`;
+            document.getElementById('netIncomeAmount').textContent = `¥${netIncome.toFixed(2)}`;
+            
+            // 更新图表
+            balanceTrendChart.data.labels = labels;
+            balanceTrendChart.data.datasets[0].data = incomeValues;
+            balanceTrendChart.data.datasets[1].data = expenseValues;
+            balanceTrendChart.data.datasets[2].data = netValues;
+            balanceTrendChart.update();
+        }
+
+        // 按时间分组记录
+        function groupRecordsByTime(records, groupBy) {
+            const groupedData = {};
+            const labels = [];
+            const data = [];
+            
+            records.forEach(record => {
+                const date = new Date(record.date);
+                let key, label;
+                
+                if (groupBy === 'day') {
+                    key = date.toISOString().split('T')[0];
+                    label = `${date.getMonth() + 1}/${date.getDate()}`;
+                } else if (groupBy === 'week') {
+                    const weekStart = new Date(date);
+                    weekStart.setDate(date.getDate() - date.getDay());
+                    key = `${weekStart.getFullYear()}-W${Math.ceil((date.getDate() + 6 - date.getDay()) / 7)}`;
+                    label = `${date.getMonth() + 1}月第${Math.ceil((date.getDate() + 6 - date.getDay()) / 7)}周`;
+                } else if (groupBy === 'month') {
+                    key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                    label = `${date.getFullYear()}年${date.getMonth() + 1}月`;
+                }
+                
+                if (!groupedData[key]) {
+                    groupedData[key] = {
+                        label: label,
+                        amount: 0
+                    };
+                }
+                
+                groupedData[key].amount += Math.abs(record.amount);
+            });
+            
+            // 按时间排序
+            const sortedKeys = Object.keys(groupedData).sort();
+            
+            sortedKeys.forEach(key => {
+                labels.push(groupedData[key].label);
+                data.push(groupedData[key].amount);
+            });
+            
+            return { labels, data };
+        }
+
+        // 将数据对齐到标签
+        function alignDataToLabels(data, sourceLabels, targetLabels) {
+            const result = [];
+            
+            targetLabels.forEach(label => {
+                const index = sourceLabels.indexOf(label);
+                if (index !== -1) {
+                    result.push(data[index]);
+                } else {
+                    result.push(0);
                 }
             });
+            
+            return result;
+        }
+
+        // 获取颜色
+        function getColorForIndex(index) {
+            const colors = [
+                '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
+                '#EF476F', '#7B68EE', '#FFA07A', '#20B2AA', '#FF8DC7',
+                '#A3D8FF', '#FFD59E', '#A8E6CF', '#FFAAA5', '#C1E3FF'
+            ];
+            return colors[index % colors.length];
+        }
+
+        // 重置分析筛选条件
+        function resetAnalysisFilter() {
+            const ninetyDaysAgo = new Date();
+            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            const today = new Date().toISOString().split('T')[0];
+            
+            analysisStartDateInput.value = ninetyDaysAgo.toISOString().split('T')[0];
+            analysisEndDateInput.value = today;
+            
+            updateAnalysisCharts();
         }
 
         // 快速添加记录
@@ -1790,12 +2608,20 @@
             
             const filteredProjects = projects.filter(project => project.type === type);
             
+            // 查找吃饭项目是否存在
+            const foodProject = filteredProjects.find(p => p.id === 4);
+            
             filteredProjects.forEach(project => {
                 const option = document.createElement('option');
                 option.value = project.id;
                 option.textContent = `${project.emoji || '📁'} ${project.name}`;
                 projectSelect.appendChild(option);
             });
+            
+            // 如果吃饭项目存在，且当前类型是支出，则默认选中吃饭项目
+            if (foodProject && type === 'expense') {
+                document.getElementById('project').value = 4;
+            }
         }
 
         // 更新多选下拉框选项
@@ -1905,7 +2731,27 @@
                 return;
             }
             
+            // 首先显示吃饭项目
+            const foodProject = projects.find(p => p.id === 4);
+            if (foodProject) {
+                const projectItem = document.createElement('div');
+                projectItem.className = `project-item ${foodProject.type}`;
+                projectItem.style.order = '-1'; // 将吃饭项目排在最前面
+                projectItem.innerHTML = `
+                    <span class="emoji">${foodProject.emoji || '📁'}</span>
+                    <span>${foodProject.name}</span>
+                    <div class="actions">
+                        <button class="btn btn-secondary edit-project" data-id="${foodProject.id}"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-danger delete-project" data-id="${foodProject.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                `;
+                projectList.appendChild(projectItem);
+            }
+            
+            // 显示其他项目（排除吃饭项目）
             projects.forEach(project => {
+                if (project.id === 4) return; // 跳过吃饭项目，因为已经显示过了
+                
                 const projectItem = document.createElement('div');
                 projectItem.className = `project-item ${project.type}`;
                 projectItem.innerHTML = `
@@ -1979,6 +2825,11 @@
             updateRecordsTable();
             updateTotalAmount();
             resetForm();
+            
+            // 更新分析图表（如果当前在分析页面）
+            if (currentMobileTab === 'analysis') {
+                updateAnalysisCharts();
+            }
             
             // 显示成功提示
             showNotification(`成功添加${type === 'income' ? '收入' : '支出'}记录！`, 'success');
@@ -2144,6 +2995,12 @@
                 saveData();
                 updateRecordsTable();
                 updateTotalAmount();
+                
+                // 更新分析图表（如果当前在分析页面）
+                if (currentMobileTab === 'analysis') {
+                    updateAnalysisCharts();
+                }
+                
                 showNotification('记录已删除！', 'success');
             }
         }
@@ -2169,8 +3026,8 @@
             // 设置默认类型为支出
             document.getElementById('type').value = 'expense';
             updateProjectSelect();
-            // 设置默认项目为饮食（id为3）
-            document.getElementById('project').value = 3;
+            // 设置默认项目为吃饭（id为4）
+            document.getElementById('project').value = 4;
             
             // 设置焦点到日期输入框
             document.getElementById('date').focus();
@@ -2257,6 +3114,7 @@
             updateProjectSelect();
             updateProjectList();
             updateMultiselectOptions();
+            updateAnalysisProjectSelects();
             closeProjectModal();
         }
 
@@ -2276,6 +3134,7 @@
                 updateProjectSelect();
                 updateProjectList();
                 updateMultiselectOptions();
+                updateAnalysisProjectSelects();
                 showNotification('项目已删除！', 'success');
             }
         }
@@ -2365,6 +3224,12 @@
                 saveData();
                 updateRecordsTable();
                 updateTotalAmount();
+                
+                // 更新分析图表（如果当前在分析页面）
+                if (currentMobileTab === 'analysis') {
+                    updateAnalysisCharts();
+                }
+                
                 showNotification('所有记录已清空！', 'success');
             }
         }
@@ -2576,6 +3441,11 @@
             updateRecordsTable();
             updateTotalAmount();
             
+            // 更新分析图表（如果当前在分析页面）
+            if (currentMobileTab === 'analysis') {
+                updateAnalysisCharts();
+            }
+            
             // 重置导入状态
             importFileInput.value = '';
             importBtn.disabled = true;
@@ -2590,7 +3460,7 @@
             const templateData = [
                 ['日期', '类型', '项目', '金额', '备注'],
                 ['2023-01-01', '收入', '工资', '5000', '一月工资'],
-                ['2023-01-02', '支出', '饮食', '50', '午餐'],
+                ['2023-01-02', '支出', '吃饭', '50', '午餐'],
                 ['2023-01-03', '支出', '衣服', '200', '新衣服'],
                 ['2023-01-04', '收入', '其他', '100', '红包'],
                 ['2023-01-05', '支出', '日用品', '80', '洗发水']
