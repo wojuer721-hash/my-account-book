@@ -223,6 +223,7 @@
             gap: 8px;
             min-height: var(--touch-size);
             touch-action: manipulation;
+            user-select: none;
         }
         
         .btn-primary {
@@ -866,6 +867,9 @@
                 cursor: pointer;
                 transition: all 0.3s;
                 border-bottom: 3px solid transparent;
+                position: relative;
+                -webkit-tap-highlight-color: rgba(255, 141, 199, 0.1);
+                user-select: none;
             }
             
             .mobile-tab.active {
@@ -929,6 +933,7 @@
                 border: none;
                 background: transparent;
                 cursor: pointer;
+                -webkit-tap-highlight-color: rgba(255, 141, 199, 0.1);
             }
             
             .mobile-bottom-btn:active {
@@ -1016,6 +1021,8 @@
             gap: 6px;
             cursor: pointer;
             transition: all 0.3s;
+            -webkit-tap-highlight-color: rgba(255, 141, 199, 0.1);
+            user-select: none;
         }
         
         .quick-action-btn:active {
@@ -1653,6 +1660,12 @@
         
         // 移动端当前标签
         let currentMobileTab = 'form';
+        
+        // 触摸相关变量 - 用于防止误触
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchStartTime = 0;
+        let isScrolling = false;
 
         // DOM 元素
         const accountForm = document.getElementById('accountForm');
@@ -1807,19 +1820,100 @@
             downloadTemplateBtn.addEventListener('click', downloadTemplate);
             importBtn.addEventListener('click', importRecords);
             
-            // 移动端标签切换事件
+            // 移动端标签切换事件 - 使用touchend而不是click
             mobileTabs.forEach(tab => {
-                tab.addEventListener('click', function(e) {
+                // 触摸开始事件
+                tab.addEventListener('touchstart', function(e) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = Date.now();
+                    isScrolling = false;
+                    
+                    // 防止默认行为
+                    e.preventDefault();
+                }, { passive: false });
+                
+                // 触摸移动事件
+                tab.addEventListener('touchmove', function(e) {
+                    const touchX = e.touches[0].clientX;
+                    const touchY = e.touches[0].clientY;
+                    
+                    // 如果移动距离超过10px，认为是滚动而不是点击
+                    if (Math.abs(touchX - touchStartX) > 10 || Math.abs(touchY - touchStartY) > 10) {
+                        isScrolling = true;
+                    }
+                }, { passive: true });
+                
+                // 触摸结束事件
+                tab.addEventListener('touchend', function(e) {
+                    const touchEndTime = Date.now();
+                    const timeDiff = touchEndTime - touchStartTime;
+                    
+                    // 如果是滚动，或者触摸时间太长（超过300ms），不切换标签
+                    if (isScrolling || timeDiff > 300) {
+                        return;
+                    }
+                    
                     const tabId = this.getAttribute('data-tab');
                     switchMobileTab(tabId);
+                    
+                    // 阻止默认行为和冒泡
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                // 保留点击事件作为桌面端备用
+                tab.addEventListener('click', function(e) {
+                    // 在移动端，点击事件应该由touchend处理
+                    if (window.innerWidth > 767) {
+                        const tabId = this.getAttribute('data-tab');
+                        switchMobileTab(tabId);
+                    }
                 });
             });
             
-            // 移动端底部按钮事件
+            // 移动端底部按钮事件 - 同样使用touchend
             mobileBottomBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
+                // 触摸开始事件
+                btn.addEventListener('touchstart', function(e) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = Date.now();
+                    isScrolling = false;
+                }, { passive: true });
+                
+                // 触摸移动事件
+                btn.addEventListener('touchmove', function(e) {
+                    const touchX = e.touches[0].clientX;
+                    const touchY = e.touches[0].clientY;
+                    
+                    if (Math.abs(touchX - touchStartX) > 10 || Math.abs(touchY - touchStartY) > 10) {
+                        isScrolling = true;
+                    }
+                }, { passive: true });
+                
+                // 触摸结束事件
+                btn.addEventListener('touchend', function(e) {
+                    const touchEndTime = Date.now();
+                    const timeDiff = touchEndTime - touchStartTime;
+                    
+                    if (isScrolling || timeDiff > 300) {
+                        return;
+                    }
+                    
                     const action = this.getAttribute('data-action');
                     handleMobileAction(action);
+                    
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                // 保留点击事件作为桌面端备用
+                btn.addEventListener('click', function() {
+                    if (window.innerWidth > 767) {
+                        const action = this.getAttribute('data-action');
+                        handleMobileAction(action);
+                    }
                 });
             });
             
@@ -1855,6 +1949,15 @@
             
             // 移动端初始化
             initMobileView();
+            
+            // 监听窗口滚动事件，用于检测是否在滚动
+            window.addEventListener('scroll', function() {
+                isScrolling = true;
+                // 延迟重置isScrolling，避免快速连续滚动时误判
+                setTimeout(() => {
+                    isScrolling = false;
+                }, 100);
+            }, { passive: true });
         });
 
         // 移动端视图初始化
@@ -1880,6 +1983,9 @@
 
         // 切换移动端标签
         function switchMobileTab(tabId) {
+            // 如果已经是当前标签，直接返回
+            if (currentMobileTab === tabId) return;
+            
             // 更新当前标签
             currentMobileTab = tabId;
             
