@@ -878,19 +878,6 @@
                 background: rgba(255, 141, 199, 0.1);
             }
             
-            .mobile-tab.active::after {
-                content: '';
-                position: absolute;
-                bottom: -3px;
-                left: 50%;
-                transform: translateX(-50%);
-                width: 0;
-                height: 0;
-                border-left: 8px solid transparent;
-                border-right: 8px solid transparent;
-                border-top: 8px solid var(--primary);
-            }
-            
             .mobile-tab:active {
                 background: rgba(255, 141, 199, 0.1);
             }
@@ -903,57 +890,23 @@
                 display: block;
             }
             
-            /* 移动端底部操作栏 */
-            .mobile-bottom-bar {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                background: var(--card-bg);
-                padding: 10px 16px;
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-                display: flex;
-                justify-content: space-between;
-                z-index: 90;
-                border-top-left-radius: var(--radius);
-                border-top-right-radius: var(--radius);
-            }
-            
-            .mobile-bottom-btn {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 5px;
-                border-radius: 8px;
-                color: var(--text);
-                font-size: 0.8rem;
-                transition: all 0.3s;
-                border: none;
-                background: transparent;
-                cursor: pointer;
-                -webkit-tap-highlight-color: rgba(255, 141, 199, 0.1);
-            }
-            
-            .mobile-bottom-btn:active {
-                background: rgba(255, 141, 199, 0.1);
-                color: var(--primary);
-            }
-            
-            .mobile-bottom-btn i {
-                font-size: 1.2rem;
-                margin-bottom: 4px;
-            }
-            
             /* 调整容器底部padding，避免内容被底部栏遮挡 */
             .container {
-                padding-bottom: 80px;
+                padding-bottom: 20px; /* 移除底部操作栏后减少padding */
             }
             
             /* 隐藏桌面版浮动按钮 */
             .floating-elements {
                 display: none;
+            }
+            
+            /* 调整表格容器宽度 */
+            .table-container {
+                width: calc(100% + 40px);
+                margin-left: -20px;
+                margin-right: -20px;
+                padding-left: 20px;
+                padding-right: 20px;
             }
         }
         
@@ -1577,30 +1530,6 @@
             <i class="fas fa-file-export"></i>
         </div>
     </div>
-    
-    <!-- 移动端底部操作栏 -->
-    <div class="mobile-bottom-bar">
-        <button class="mobile-bottom-btn" data-action="add">
-            <i class="fas fa-plus-circle"></i>
-            <span>记账</span>
-        </button>
-        <button class="mobile-bottom-btn" data-action="records">
-            <i class="fas fa-list-alt"></i>
-            <span>记录</span>
-        </button>
-        <button class="mobile-bottom-btn" data-action="analysis">
-            <i class="fas fa-chart-line"></i>
-            <span>分析</span>
-        </button>
-        <button class="mobile-bottom-btn" data-action="export">
-            <i class="fas fa-file-export"></i>
-            <span>导出</span>
-        </button>
-        <button class="mobile-bottom-btn" data-action="projects">
-            <i class="fas fa-tags"></i>
-            <span>项目</span>
-        </button>
-    </div>
 
     <script>
         // 初始化默认项目和账本数据
@@ -1661,11 +1590,10 @@
         // 移动端当前标签
         let currentMobileTab = 'form';
         
-        // 触摸相关变量 - 用于防止误触
-        let touchStartX = 0;
+        // 触摸相关变量
         let touchStartY = 0;
-        let touchStartTime = 0;
-        let isScrolling = false;
+        let isTouchingTab = false;
+        let tabTouchStartTime = 0;
 
         // DOM 元素
         const accountForm = document.getElementById('accountForm');
@@ -1714,7 +1642,6 @@
         
         // 移动端相关DOM元素
         const mobileTabs = document.querySelectorAll('.mobile-tab');
-        const mobileBottomBtns = document.querySelectorAll('.mobile-bottom-btn');
         const formTab = document.getElementById('formTab');
         const recordsTab = document.getElementById('recordsTab');
         const analysisTab = document.getElementById('analysisTab');
@@ -1820,100 +1747,11 @@
             downloadTemplateBtn.addEventListener('click', downloadTemplate);
             importBtn.addEventListener('click', importRecords);
             
-            // 移动端标签切换事件 - 使用touchend而不是click
+            // 移动端标签切换事件 - 简化版，只使用click事件
             mobileTabs.forEach(tab => {
-                // 触摸开始事件
-                tab.addEventListener('touchstart', function(e) {
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
-                    touchStartTime = Date.now();
-                    isScrolling = false;
-                    
-                    // 防止默认行为
-                    e.preventDefault();
-                }, { passive: false });
-                
-                // 触摸移动事件
-                tab.addEventListener('touchmove', function(e) {
-                    const touchX = e.touches[0].clientX;
-                    const touchY = e.touches[0].clientY;
-                    
-                    // 如果移动距离超过10px，认为是滚动而不是点击
-                    if (Math.abs(touchX - touchStartX) > 10 || Math.abs(touchY - touchStartY) > 10) {
-                        isScrolling = true;
-                    }
-                }, { passive: true });
-                
-                // 触摸结束事件
-                tab.addEventListener('touchend', function(e) {
-                    const touchEndTime = Date.now();
-                    const timeDiff = touchEndTime - touchStartTime;
-                    
-                    // 如果是滚动，或者触摸时间太长（超过300ms），不切换标签
-                    if (isScrolling || timeDiff > 300) {
-                        return;
-                    }
-                    
+                tab.addEventListener('click', function(e) {
                     const tabId = this.getAttribute('data-tab');
                     switchMobileTab(tabId);
-                    
-                    // 阻止默认行为和冒泡
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, { passive: false });
-                
-                // 保留点击事件作为桌面端备用
-                tab.addEventListener('click', function(e) {
-                    // 在移动端，点击事件应该由touchend处理
-                    if (window.innerWidth > 767) {
-                        const tabId = this.getAttribute('data-tab');
-                        switchMobileTab(tabId);
-                    }
-                });
-            });
-            
-            // 移动端底部按钮事件 - 同样使用touchend
-            mobileBottomBtns.forEach(btn => {
-                // 触摸开始事件
-                btn.addEventListener('touchstart', function(e) {
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
-                    touchStartTime = Date.now();
-                    isScrolling = false;
-                }, { passive: true });
-                
-                // 触摸移动事件
-                btn.addEventListener('touchmove', function(e) {
-                    const touchX = e.touches[0].clientX;
-                    const touchY = e.touches[0].clientY;
-                    
-                    if (Math.abs(touchX - touchStartX) > 10 || Math.abs(touchY - touchStartY) > 10) {
-                        isScrolling = true;
-                    }
-                }, { passive: true });
-                
-                // 触摸结束事件
-                btn.addEventListener('touchend', function(e) {
-                    const touchEndTime = Date.now();
-                    const timeDiff = touchEndTime - touchStartTime;
-                    
-                    if (isScrolling || timeDiff > 300) {
-                        return;
-                    }
-                    
-                    const action = this.getAttribute('data-action');
-                    handleMobileAction(action);
-                    
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, { passive: false });
-                
-                // 保留点击事件作为桌面端备用
-                btn.addEventListener('click', function() {
-                    if (window.innerWidth > 767) {
-                        const action = this.getAttribute('data-action');
-                        handleMobileAction(action);
-                    }
                 });
             });
             
@@ -1950,13 +1788,9 @@
             // 移动端初始化
             initMobileView();
             
-            // 监听窗口滚动事件，用于检测是否在滚动
+            // 添加滚动事件监听，确保滚动时不会切换标签
             window.addEventListener('scroll', function() {
-                isScrolling = true;
-                // 延迟重置isScrolling，避免快速连续滚动时误判
-                setTimeout(() => {
-                    isScrolling = false;
-                }, 100);
+                // 滚动时不做任何操作
             }, { passive: true });
         });
 
@@ -1971,13 +1805,6 @@
                 
                 // 隐藏桌面版浮动按钮
                 document.querySelector('.floating-elements').style.display = 'none';
-                
-                // 调整表格容器宽度
-                const tableContainer = document.querySelector('.table-container');
-                if (tableContainer) {
-                    const containerWidth = document.querySelector('.container').offsetWidth;
-                    tableContainer.style.width = `${containerWidth}px`;
-                }
             }
         }
 
@@ -1998,15 +1825,6 @@
                 }
             });
             
-            // 更新底部按钮激活状态
-            mobileBottomBtns.forEach(btn => {
-                if (btn.getAttribute('data-action') === tabId) {
-                    btn.style.color = 'var(--primary)';
-                } else {
-                    btn.style.color = 'var(--text)';
-                }
-            });
-            
             // 显示对应的内容区域
             const tabs = [formTab, recordsTab, analysisTab, projectsTab];
             tabs.forEach(tab => {
@@ -2023,27 +1841,6 @@
             
             // 滚动到顶部
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // 处理移动端底部按钮操作
-        function handleMobileAction(action) {
-            switch (action) {
-                case 'add':
-                    switchMobileTab('form');
-                    break;
-                case 'records':
-                    switchMobileTab('records');
-                    break;
-                case 'analysis':
-                    switchMobileTab('analysis');
-                    break;
-                case 'export':
-                    exportData();
-                    break;
-                case 'projects':
-                    switchMobileTab('projects');
-                    break;
-            }
         }
 
         // 更新分析图表项目选择
