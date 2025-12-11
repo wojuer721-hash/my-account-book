@@ -878,6 +878,19 @@
                 background: rgba(255, 141, 199, 0.1);
             }
             
+            .mobile-tab.active::after {
+                content: '';
+                position: absolute;
+                bottom: -3px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 0;
+                height: 0;
+                border-left: 8px solid transparent;
+                border-right: 8px solid transparent;
+                border-top: 8px solid var(--primary);
+            }
+            
             .mobile-tab:active {
                 background: rgba(255, 141, 199, 0.1);
             }
@@ -890,23 +903,16 @@
                 display: block;
             }
             
+            /* 移动端底部操作栏 - 已移除 */
+            
             /* 调整容器底部padding，避免内容被底部栏遮挡 */
             .container {
-                padding-bottom: 20px; /* 移除底部操作栏后减少padding */
+                padding-bottom: 20px; /* 减少底部padding */
             }
             
             /* 隐藏桌面版浮动按钮 */
             .floating-elements {
                 display: none;
-            }
-            
-            /* 调整表格容器宽度 */
-            .table-container {
-                width: calc(100% + 40px);
-                margin-left: -20px;
-                margin-right: -20px;
-                padding-left: 20px;
-                padding-right: 20px;
             }
         }
         
@@ -1530,6 +1536,8 @@
             <i class="fas fa-file-export"></i>
         </div>
     </div>
+    
+    <!-- 移动端底部操作栏已移除 -->
 
     <script>
         // 初始化默认项目和账本数据
@@ -1590,10 +1598,11 @@
         // 移动端当前标签
         let currentMobileTab = 'form';
         
-        // 触摸相关变量
+        // 触摸相关变量 - 用于防止误触
+        let touchStartX = 0;
         let touchStartY = 0;
-        let isTouchingTab = false;
-        let tabTouchStartTime = 0;
+        let touchStartTime = 0;
+        let isScrolling = false;
 
         // DOM 元素
         const accountForm = document.getElementById('accountForm');
@@ -1747,11 +1756,55 @@
             downloadTemplateBtn.addEventListener('click', downloadTemplate);
             importBtn.addEventListener('click', importRecords);
             
-            // 移动端标签切换事件 - 简化版，只使用click事件
+            // 移动端标签切换事件 - 使用touchend而不是click
             mobileTabs.forEach(tab => {
-                tab.addEventListener('click', function(e) {
+                // 触摸开始事件
+                tab.addEventListener('touchstart', function(e) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                    touchStartTime = Date.now();
+                    isScrolling = false;
+                    
+                    // 防止默认行为
+                    e.preventDefault();
+                }, { passive: false });
+                
+                // 触摸移动事件
+                tab.addEventListener('touchmove', function(e) {
+                    const touchX = e.touches[0].clientX;
+                    const touchY = e.touches[0].clientY;
+                    
+                    // 如果移动距离超过10px，认为是滚动而不是点击
+                    if (Math.abs(touchX - touchStartX) > 10 || Math.abs(touchY - touchStartY) > 10) {
+                        isScrolling = true;
+                    }
+                }, { passive: true });
+                
+                // 触摸结束事件
+                tab.addEventListener('touchend', function(e) {
+                    const touchEndTime = Date.now();
+                    const timeDiff = touchEndTime - touchStartTime;
+                    
+                    // 如果是滚动，或者触摸时间太长（超过300ms），不切换标签
+                    if (isScrolling || timeDiff > 300) {
+                        return;
+                    }
+                    
                     const tabId = this.getAttribute('data-tab');
                     switchMobileTab(tabId);
+                    
+                    // 阻止默认行为和冒泡
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, { passive: false });
+                
+                // 保留点击事件作为桌面端备用
+                tab.addEventListener('click', function(e) {
+                    // 在移动端，点击事件应该由touchend处理
+                    if (window.innerWidth > 767) {
+                        const tabId = this.getAttribute('data-tab');
+                        switchMobileTab(tabId);
+                    }
                 });
             });
             
@@ -1788,9 +1841,13 @@
             // 移动端初始化
             initMobileView();
             
-            // 添加滚动事件监听，确保滚动时不会切换标签
+            // 监听窗口滚动事件，用于检测是否在滚动
             window.addEventListener('scroll', function() {
-                // 滚动时不做任何操作
+                isScrolling = true;
+                // 延迟重置isScrolling，避免快速连续滚动时误判
+                setTimeout(() => {
+                    isScrolling = false;
+                }, 100);
             }, { passive: true });
         });
 
@@ -1805,6 +1862,13 @@
                 
                 // 隐藏桌面版浮动按钮
                 document.querySelector('.floating-elements').style.display = 'none';
+                
+                // 调整表格容器宽度
+                const tableContainer = document.querySelector('.table-container');
+                if (tableContainer) {
+                    const containerWidth = document.querySelector('.container').offsetWidth;
+                    tableContainer.style.width = `${containerWidth}px`;
+                }
             }
         }
 
@@ -1839,8 +1903,8 @@
                 }
             });
             
-            // 滚动到顶部
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // 注释掉自动滚动到顶部的代码，避免切换标签时跳转到顶部
+            // window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // 更新分析图表项目选择
